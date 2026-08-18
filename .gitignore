@@ -1,0 +1,34 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+*.iml
+
+# macOS
+.DS_Store
+
+# RAW kalibrasyon kareleri — buyuk, repoya girmez.
+# Ama olcum SONUCLARI (json/png) girer: alistirma #7, "kalibrasyon verisini versiyonla".
+data/**/*.CR2
+data/**/*.CR3
+data/**/*.NEF
+data/**/*.ARW
+data/**/*.RAF
+data/**/*.ORF
+data/**/*.RW2
+data/**/*.DNG
+data/**/*.PEF
+data/**/*.cr2
+data/**/*.cr3
+data/**/*.nef
+data/**/*.arw
+data/**/*.raf
+data/**/*.orf
+data/**/*.rw2
+data/**/*.dng
+data/**/*.pef
