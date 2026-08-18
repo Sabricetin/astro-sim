@@ -1,0 +1,209 @@
+{
+  "faz": "0.A",
+  "kanal": "G1",
+  "roi": 400,
+  "iso": 800,
+  "sensor": {
+    "white_level": 15360,
+    "black_level": 2049.0,
+    "color_desc": "RGBG",
+    "raw_pattern": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        2
+      ]
+    ]
+  },
+  "gain_e_per_adu": 0.24729932056565473,
+  "read_noise_e_from_bias": 2.5739314050116433,
+  "read_noise_e_from_ptc": 0.0,
+  "read_noise_adu": 10.408162056912316,
+  "bias_offset_adu": 2048.810971875,
+  "full_well_e": 3291.8012560494303,
+  "ptc_slope": 4.043682763513752,
+  "ptc_intercept": -157.62678448831804,
+  "ptc_r2": 0.9998064446558789,
+  "linearity": {
+    "max_deviation_pct": 23.70490061761194,
+    "light_spread_pct": 37.17563747782304,
+    "per_point": [
+      {
+        "exposure_s": 0.02,
+        "signal_adu": 323.278003125,
+        "deviation_pct": 7.249961013363743
+      },
+      {
+        "exposure_s": 0.025,
+        "signal_adu": 386.614365625,
+        "deviation_pct": 2.609828666764729
+      },
+      {
+        "exposure_s": 0.03333333333,
+        "signal_adu": 470.135840625,
+        "deviation_pct": -6.417293916105904
+      },
+      {
+        "exposure_s": 0.04,
+        "signal_adu": 578.709971875,
+        "deviation_pct": -4.004260540981443
+      },
+      {
+        "exposure_s": 0.05,
+        "signal_adu": 709.896815625,
+        "deviation_pct": -5.794511147294975
+      },
+      {
+        "exposure_s": 0.06666666667,
+        "signal_adu": 812.755015625,
+        "deviation_pct": -19.108683957255835
+      },
+      {
+        "exposure_s": 0.07692307692,
+        "signal_adu": 1000.890890625,
+        "deviation_pct": -13.6661570819997
+      },
+      {
+        "exposure_s": 0.1,
+        "signal_adu": 1237.422028125,
+        "deviation_pct": -17.895147216578046
+      },
+      {
+        "exposure_s": 0.125,
+        "signal_adu": 1524.307303125,
+        "deviation_pct": -19.087894752020322
+      },
+      {
+        "exposure_s": 0.1666666667,
+        "signal_adu": 1916.436390625,
+        "deviation_pct": -23.70490061761194
+      },
+      {
+        "exposure_s": 0.2,
+        "signal_adu": 2377.816390625,
+        "deviation_pct": -21.114114561991652
+      },
+      {
+        "exposure_s": 0.25,
+        "signal_adu": 3975.180403125,
+        "deviation_pct": 5.5037309399351235
+      },
+      {
+        "exposure_s": 0.3,
+        "signal_adu": 5011.238553125,
+        "deviation_pct": 10.834459145782969
+      },
+      {
+        "exposure_s": 0.4,
+        "signal_adu": 6348.923809375,
+        "deviation_pct": 5.315212363675343
+      }
+    ]
+  },
+  "points": [
+    {
+      "iso": 800,
+      "exposure_s": 0.02,
+      "signal_adu": 323.278003125,
+      "variance_adu2": 1307.0524833685743,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.025,
+      "signal_adu": 386.614365625,
+      "variance_adu2": 1557.832028818672,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.03333333333,
+      "signal_adu": 470.135840625,
+      "variance_adu2": 1874.261421545,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.04,
+      "signal_adu": 578.709971875,
+      "variance_adu2": 2282.711269724199,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.05,
+      "signal_adu": 709.896815625,
+      "variance_adu2": 2789.9671872924805,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.06666666667,
+      "signal_adu": 812.755015625,
+      "variance_adu2": 3148.8602585451367,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.07692307692,
+      "signal_adu": 1000.890890625,
+      "variance_adu2": 3896.3272284912305,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.1,
+      "signal_adu": 1237.422028125,
+      "variance_adu2": 4795.254221209199,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.125,
+      "signal_adu": 1524.307303125,
+      "variance_adu2": 5922.816559992011,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.1666666667,
+      "signal_adu": 1916.436390625,
+      "variance_adu2": 7516.956886859688,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.2,
+      "signal_adu": 2377.816390625,
+      "variance_adu2": 9317.014163605547,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.25,
+      "signal_adu": 3975.180403125,
+      "variance_adu2": 15800.025622624296,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.3,
+      "signal_adu": 5011.238553125,
+      "variance_adu2": 20032.545747884687,
+      "n_frames": 2
+    },
+    {
+      "iso": 800,
+      "exposure_s": 0.4,
+      "signal_adu": 6348.923809375,
+      "variance_adu2": 25720.75842130373,
+      "n_frames": 2
+    }
+  ],
+  "warnings": [
+    "isik kaynagi kararsiz (sinyal/poz orani %37 yayiliyor) — DOGRUSALLIK SONUCU GECERSIZ. Kazanc ve okuma gurultusu etkilenmez (ikisi de poz suresine bagli degildir)."
+  ]
+}
