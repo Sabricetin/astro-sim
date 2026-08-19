@@ -13,6 +13,9 @@ class NightPanel extends StatelessWidget {
   final NightPlan plan;
   final String targetName;
 
+  /// Zaman kaydiricisinin bulundugu an.
+  final DateTime currentUtc;
+
   /// Kullaniciya gosterilecek yerel saat farki. Hesap hep UTC; yalnizca
   /// gosterimde yerele cevriliyor (yol haritasi: "yerel saat sadece ekranda").
   final Duration localOffset;
@@ -21,8 +24,21 @@ class NightPanel extends StatelessWidget {
     super.key,
     required this.plan,
     required this.targetName,
+    required this.currentUtc,
     required this.localOffset,
   });
+
+  /// Kaydiricinin bulundugu ana en yakin ornek.
+  SkyConditions? get _now {
+    if (plan.samples.isEmpty) return null;
+    return plan.samples.reduce(
+      (a, b) =>
+          a.utc.difference(currentUtc).inSeconds.abs() <
+              b.utc.difference(currentUtc).inSeconds.abs()
+          ? a
+          : b,
+    );
+  }
 
   String _local(DateTime utc) {
     final t = utc.add(localOffset);
@@ -117,7 +133,9 @@ class NightPanel extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 10),
-            AltitudeGraph(plan: plan),
+            if (_now != null) _liveConditions(_now!),
+            const SizedBox(height: 8),
+            AltitudeGraph(plan: plan, currentUtc: currentUtc),
             const SizedBox(height: 4),
             Text(
               'mavi: hedef   sari: Ay   koyu bant: karanlik   yesil: pencere',
@@ -128,6 +146,44 @@ class NightPanel extends StatelessWidget {
       ),
     );
   }
+
+  /// Kaydiricinin bulundugu andaki kosullar.
+  ///
+  /// Pencere gecenin ozelligi, bu ise ANIN ozelligi — kaydirici
+  /// oynatildikca degisen tek sey burasi. Ikisini ayirmak, kullanicinin
+  /// "neden hicbir sey degismiyor" diye sormasini onluyor.
+  Widget _liveConditions(SkyConditions now) => DefaultTextStyle(
+    style: const TextStyle(
+      fontFamily: 'monospace',
+      fontSize: 12,
+      height: 1.5,
+      color: Color(0xFFBFD4E6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '${_local(now.utc)} — hedef '
+          '${now.targetAltitudeDegrees.toStringAsFixed(1)}°'
+          '${now.targetAltitudeDegrees < 0 ? " (ufkun altinda)" : ""}',
+        ),
+        Text(
+          '  Ay ${now.moonAltitudeDegrees.toStringAsFixed(1)}°   '
+          'ayrim ${now.moonSeparationDegrees.toStringAsFixed(0)}°   '
+          'ceza ${now.moonPenaltyMagnitudes.toStringAsFixed(2)} kadir',
+        ),
+        Text(
+          '  gokyuzu: ${now.isDark ? "astronomik karanlik" : "aydinlik / alacakaranlik"}',
+          style: TextStyle(
+            color: now.isDark
+                ? const Color(0xFF5FD08A)
+                : const Color(0xFF6B8299),
+          ),
+        ),
+      ],
+    ),
+  );
 
   String _moonSentence(int percent, double penalty, String verdict) {
     final buffer = StringBuffer('Ay %$percent dolu');

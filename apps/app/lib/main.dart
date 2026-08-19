@@ -390,6 +390,7 @@ class _SkyScreenState extends State<SkyScreen> {
             NightPanel(
               plan: _plan!,
               targetName: _targetName,
+              currentUtc: _utc,
               localOffset: _localOffset,
             )
           else
@@ -406,15 +407,34 @@ class _SkyScreenState extends State<SkyScreen> {
             children: [
               IconButton.filledTonal(
                 onPressed: () =>
+                    _setTime(_utc.subtract(const Duration(days: 1))),
+                icon: const Icon(Icons.keyboard_double_arrow_left),
+                tooltip: '-1 gun',
+              ),
+              const SizedBox(width: 6),
+              IconButton.filledTonal(
+                onPressed: () =>
                     _setTime(_utc.subtract(const Duration(hours: 1))),
-                icon: const Icon(Icons.fast_rewind),
+                icon: const Icon(Icons.chevron_left),
                 tooltip: '-1 saat',
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
+              Text(
+                '${_utc.year}-${_utc.month.toString().padLeft(2, '0')}-'
+                '${_utc.day.toString().padLeft(2, '0')}',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+              const SizedBox(width: 10),
               IconButton.filledTonal(
                 onPressed: () => _setTime(_utc.add(const Duration(hours: 1))),
-                icon: const Icon(Icons.fast_forward),
+                icon: const Icon(Icons.chevron_right),
                 tooltip: '+1 saat',
+              ),
+              const SizedBox(width: 6),
+              IconButton.filledTonal(
+                onPressed: () => _setTime(_utc.add(const Duration(days: 1))),
+                icon: const Icon(Icons.keyboard_double_arrow_right),
+                tooltip: '+1 gun',
               ),
             ],
           ),

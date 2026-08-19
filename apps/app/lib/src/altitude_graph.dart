@@ -11,9 +11,15 @@ class AltitudeGraph extends StatelessWidget {
   final NightPlan plan;
   final double minimumAltitudeDegrees;
 
+  /// Zaman kaydiricisinin bulundugu an. Grafige dikey imlec olarak
+  /// cizilir — kaydiricinin plana neresine denk geldigini gostermenin
+  /// tek yolu bu.
+  final DateTime currentUtc;
+
   const AltitudeGraph({
     super.key,
     required this.plan,
+    required this.currentUtc,
     this.minimumAltitudeDegrees = 20,
   });
 
@@ -24,6 +30,7 @@ class AltitudeGraph extends StatelessWidget {
       painter: _AltitudeGraphPainter(
         plan: plan,
         minimumAltitude: minimumAltitudeDegrees,
+        currentUtc: currentUtc,
       ),
       size: Size.infinite,
     ),
@@ -33,8 +40,13 @@ class AltitudeGraph extends StatelessWidget {
 class _AltitudeGraphPainter extends CustomPainter {
   final NightPlan plan;
   final double minimumAltitude;
+  final DateTime currentUtc;
 
-  _AltitudeGraphPainter({required this.plan, required this.minimumAltitude});
+  _AltitudeGraphPainter({
+    required this.plan,
+    required this.minimumAltitude,
+    required this.currentUtc,
+  });
 
   /// Grafigin dikey araligi. Ufkun biraz altini da gostermek, hedefin ne
   /// zaman dogdugunu okunur kilar.
@@ -129,6 +141,30 @@ class _AltitudeGraphPainter extends CustomPainter {
         ..color = const Color(0xFF8FC8F0),
     );
 
+    // Simdiki an — dikey imlec ve hedefin o andaki yuksekliginde nokta.
+    final nowX = x(currentUtc);
+    if (nowX >= 0 && nowX <= size.width) {
+      canvas.drawLine(
+        Offset(nowX, 0),
+        Offset(nowX, size.height),
+        Paint()
+          ..color = const Color(0xCCE8EEF4)
+          ..strokeWidth = 1.2,
+      );
+      final nearest = samples.reduce(
+        (a, b) =>
+            (a.utc.difference(currentUtc).inSeconds).abs() <
+                (b.utc.difference(currentUtc).inSeconds).abs()
+            ? a
+            : b,
+      );
+      canvas.drawCircle(
+        Offset(nowX, y(nearest.targetAltitudeDegrees)),
+        3.5,
+        Paint()..color = const Color(0xFF8FC8F0),
+      );
+    }
+
     _label(canvas, '90°', Offset(4, y(90) + 2));
     _label(
       canvas,
@@ -156,5 +192,7 @@ class _AltitudeGraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_AltitudeGraphPainter old) =>
-      old.plan != plan || old.minimumAltitude != minimumAltitude;
+      old.plan != plan ||
+      old.minimumAltitude != minimumAltitude ||
+      old.currentUtc != currentUtc;
 }
