@@ -24,6 +24,8 @@ class SkyPainter extends CustomPainter {
   final double horizontalFovDegrees;
   final double rollDegrees;
   final bool showHorizon;
+  final bool showConstellations;
+  final bool showLabels;
 
   /// Projeksiyon ciktisinin yazildigi tampon. Her karede yeniden
   /// ayrilmamasi icin disaridan veriliyor.
@@ -37,7 +39,28 @@ class SkyPainter extends CustomPainter {
     required this.scratch,
     this.rollDegrees = 0.0,
     this.showHorizon = true,
+    this.showConstellations = true,
+    this.showLabels = true,
   });
+
+  /// Bir yildizi ekran koordinatina cevirir. Gorunmuyorsa null.
+  Offset? _screenPosition(
+    int index,
+    double pixelsPerTangent,
+    double cx,
+    double cy,
+    Size size,
+  ) {
+    final p = astro.project(
+      azimuthDegrees: sky.azimuthDegrees(index),
+      altitudeDegrees: sky.altitudeDegrees(index),
+      centerAzimuthDegrees: centerAzimuthDegrees,
+      centerAltitudeDegrees: centerAltitudeDegrees,
+      rollDegrees: rollDegrees,
+    );
+    if (p == null) return null;
+    return Offset(cx + p.x * pixelsPerTangent, cy - p.y * pixelsPerTangent);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -57,6 +80,10 @@ class SkyPainter extends CustomPainter {
     if (showHorizon) {
       _paintHorizon(canvas, size, pixelsPerTangent, cx, cy);
       _paintCompass(canvas, size, pixelsPerTangent, cx, cy);
+    }
+
+    if (showConstellations) {
+      _paintConstellations(canvas, size, pixelsPerTangent, cx, cy);
     }
 
     final radiusScale = StarStyle.zoomScale(horizontalFovDegrees);
@@ -100,6 +127,80 @@ class SkyPainter extends CustomPainter {
         Float32List.sublistView(scratch, 0, count * 2),
         paint,
       );
+    }
+
+    if (showLabels) {
+      _paintLabels(canvas, size, pixelsPerTangent, cx, cy);
+    }
+  }
+
+  /// Takim yildizi cizgileri.
+  ///
+  /// Yildizlardan ONCE cizilir ki noktalar cizgilerin ustunde kalsin.
+  /// Renk bilerek soluk: cizgiler yildizlari bastirmamali, sadece
+  /// desene isaret etmeli.
+  void _paintConstellations(
+    Canvas canvas,
+    Size size,
+    double pixelsPerTangent,
+    double cx,
+    double cy,
+  ) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..color = const Color(0x4A5C8FB8);
+
+    for (final constellation in astro.constellations) {
+      for (var k = 0; k < constellation.segmentCount; k++) {
+        final a = sky.indexByHr[constellation.segments[k * 2]];
+        final b = sky.indexByHr[constellation.segments[k * 2 + 1]];
+        if (a == null || b == null) continue;
+
+        final pa = _screenPosition(a, pixelsPerTangent, cx, cy, size);
+        final pb = _screenPosition(b, pixelsPerTangent, cx, cy, size);
+        if (pa == null || pb == null) continue;
+
+        // Ikisi de ekran disindaysa cizme. Biri icerideyse ciz —
+        // yarim cizgiler kadraj kenarinda dogaldir.
+        final bounds = Rect.fromLTWH(0, 0, size.width, size.height);
+        if (!bounds.contains(pa) && !bounds.contains(pb)) continue;
+
+        canvas.drawLine(pa, pb, paint);
+      }
+    }
+  }
+
+  /// Parlak yildiz adlari.
+  ///
+  /// Yalnizca ekranda gercekten gorunenler cizilir. Tumu her zaman
+  /// gosterilseydi genis acida gokyuzu okunmaz olurdu.
+  void _paintLabels(
+    Canvas canvas,
+    Size size,
+    double pixelsPerTangent,
+    double cx,
+    double cy,
+  ) {
+    final bounds = Rect.fromLTWH(0, 0, size.width, size.height);
+    for (final entry in astro.brightStarNames.entries) {
+      final index = sky.indexByHr[entry.key];
+      if (index == null) continue;
+      final p = _screenPosition(index, pixelsPerTangent, cx, cy, size);
+      if (p == null || !bounds.contains(p)) continue;
+
+      final painter = TextPainter(
+        text: TextSpan(
+          text: entry.value,
+          style: const TextStyle(
+            color: Color(0xCCD3E2F0),
+            fontSize: 11,
+            letterSpacing: 0.4,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      painter.paint(canvas, p + const Offset(7, -6));
     }
   }
 
@@ -209,5 +310,7 @@ class SkyPainter extends CustomPainter {
       old.centerAltitudeDegrees != centerAltitudeDegrees ||
       old.horizontalFovDegrees != horizontalFovDegrees ||
       old.rollDegrees != rollDegrees ||
-      old.showHorizon != showHorizon;
+      old.showHorizon != showHorizon ||
+      old.showConstellations != showConstellations ||
+      old.showLabels != showLabels;
 }

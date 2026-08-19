@@ -67,6 +67,9 @@ class _SkyScreenState extends State<SkyScreen> {
   double _fov = presets.first.fov;
   DateTime _utc = presets.first.utc;
 
+  bool _showConstellations = true;
+  bool _showLabels = true;
+
   double _fovAtGestureStart = 0;
 
   @override
@@ -188,6 +191,8 @@ class _SkyScreenState extends State<SkyScreen> {
                         centerAltitudeDegrees: _altitude,
                         horizontalFovDegrees: _fov,
                         scratch: scratch,
+                        showConstellations: _showConstellations,
+                        showLabels: _showLabels,
                       ),
                     ),
                   ),
@@ -215,6 +220,22 @@ class _SkyScreenState extends State<SkyScreen> {
                   onPressed: () => _applyPreset(p),
                   child: Text(p.label),
                 ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              FilterChip(
+                label: const Text('Takim yildizi cizgileri'),
+                selected: _showConstellations,
+                onSelected: (v) => setState(() => _showConstellations = v),
+              ),
+              FilterChip(
+                label: const Text('Yildiz adlari'),
+                selected: _showLabels,
+                onSelected: (v) => setState(() => _showLabels = v),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -248,6 +269,10 @@ class _SkyScreenState extends State<SkyScreen> {
                     Text('yildiz ${sky.starCount}'),
                     const Text(
                       'surukle: bakis   kaydir/kistir: zoom',
+                      style: TextStyle(color: Color(0xFF6B8299)),
+                    ),
+                    const Text(
+                      'Orion: kum saati figuru, ortada uc yildizli kusak',
                       style: TextStyle(color: Color(0xFF6B8299)),
                     ),
                   ],

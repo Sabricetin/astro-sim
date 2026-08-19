@@ -31,6 +31,11 @@ class SkyModel {
   /// toplam sayidir.
   final Int32List bucketStart;
 
+  /// HR numarasindan katalog indeksine. Takim yildizi cizgileri ve
+  /// etiketler bunu kullanir; her cizimde arama yapmamak icin bir kez
+  /// kuruluyor.
+  final Map<int, int> indexByHr;
+
   final DateTime utc;
   final Observer observer;
 
@@ -40,6 +45,7 @@ class SkyModel {
     required this.bucket,
     required this.orderByBucket,
     required this.bucketStart,
+    required this.indexByHr,
     required this.utc,
     required this.observer,
   });
@@ -156,6 +162,7 @@ class SkyModel {
       bucket: bucket,
       orderByBucket: order,
       bucketStart: bucketStart,
+      indexByHr: {for (var i = 0; i < n; i++) catalog.hrNumbers[i]: i},
       utc: utc,
       observer: observer,
     );
