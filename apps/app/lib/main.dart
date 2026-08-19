@@ -5,6 +5,8 @@ import 'package:astro_core/astro_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import 'src/camera_panel.dart';
+import 'src/camera_settings.dart';
 import 'src/sky_model.dart';
 import 'src/sky_painter.dart';
 
@@ -69,8 +71,33 @@ class _SkyScreenState extends State<SkyScreen> {
 
   bool _showConstellations = true;
   bool _showLabels = true;
+  bool _showFrame = true;
+  double _roll = 0;
+
+  CameraSettings _settings = CameraSettings(
+    camera: cameras.first, // Canon EOS 760D — kalibrasyonu yapilan govde
+  );
+
+  /// Ekran ortasindaki noktanin sapmasi. NPF duzeltmesi bunu kullanir:
+  /// kutba yakin hedeflerde daha uzun poz verilebilir.
+  double get _centerDeclination {
+    final sky = _sky;
+    if (sky == null) return 0;
+    return horizontalToEquatorial(
+      horizontal: Horizontal(
+        azimuthDegrees: _azimuth,
+        altitudeDegrees: _altitude,
+      ),
+      observer: gaziantep,
+      localSiderealTimeDegrees: localMeanSiderealTimeDegrees(
+        julianDay(_utc),
+        gaziantep.longitudeEastDegrees,
+      ),
+    ).declinationDegrees;
+  }
 
   double _fovAtGestureStart = 0;
+  double _rollAtGestureStart = 0;
 
   @override
   void initState() {
@@ -170,14 +197,25 @@ class _SkyScreenState extends State<SkyScreen> {
               }
             },
             child: GestureDetector(
-              onScaleStart: (_) => _fovAtGestureStart = _fov,
+              onScaleStart: (_) {
+                _fovAtGestureStart = _fov;
+                _rollAtGestureStart = _roll;
+              },
               onScaleUpdate: (d) {
+                if (d.rotation != 0.0) {
+                  // T3.4: iki parmakla dondurme -> kamera roll'u.
+                  setState(
+                    () => _roll = normalizeDegreesSigned(
+                      _rollAtGestureStart + toDegrees(d.rotation),
+                    ),
+                  );
+                }
                 if (d.scale != 1.0) {
                   setState(
                     () =>
                         _fov = (_fovAtGestureStart / d.scale).clamp(2.0, 140.0),
                   );
-                } else {
+                } else if (d.rotation == 0.0) {
                   _pan(d.focalPointDelta, size);
                 }
               },
@@ -191,8 +229,14 @@ class _SkyScreenState extends State<SkyScreen> {
                         centerAltitudeDegrees: _altitude,
                         horizontalFovDegrees: _fov,
                         scratch: scratch,
+                        rollDegrees: _roll,
                         showConstellations: _showConstellations,
                         showLabels: _showLabels,
+                        frame: _showFrame
+                            ? _settings.copyWith(
+                                targetDeclinationDegrees: _centerDeclination,
+                              )
+                            : null,
                       ),
                     ),
                   ),
@@ -281,6 +325,15 @@ class _SkyScreenState extends State<SkyScreen> {
             ),
           ),
           const Spacer(),
+          CameraPanel(
+            settings: _settings.copyWith(
+              targetDeclinationDegrees: _centerDeclination,
+            ),
+            onChanged: (s) => setState(() => _settings = s),
+            showFrame: _showFrame,
+            onShowFrameChanged: (v) => setState(() => _showFrame = v),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               IconButton.filledTonal(

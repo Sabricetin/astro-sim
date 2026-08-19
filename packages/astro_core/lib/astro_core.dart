@@ -12,6 +12,9 @@
 ///  - Zaman her yerde **UTC**; yerel saat sadece arayuzde.
 library;
 
+export 'src/camera/exposure.dart';
+export 'src/camera/field_of_view.dart';
+export 'src/camera/sensor.dart';
 export 'src/catalog/constellations.dart';
 export 'src/catalog/messier.g.dart';
 export 'src/catalog/star_catalog.dart';

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:astro_core/astro_core.dart';
 import 'package:astro_sim/src/sky_model.dart';
+import 'package:astro_sim/src/camera_settings.dart';
 import 'package:astro_sim/src/star_style.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -108,6 +109,65 @@ void main() {
         final s = StarStyle.zoomScale(fov);
         expect(s, inInclusiveRange(0.55, 1.9), reason: 'FOV $fov');
       }
+    });
+  });
+
+  group('CameraSettings — Faz 3', () {
+    final canon = cameras.firstWhere((c) => c.name == 'Canon EOS 760D');
+
+    test('varsayilan: 14 mm f/2.8, NPF ~15 s', () {
+      final s = CameraSettings(camera: canon);
+      expect(s.maxExposureSeconds, closeTo(14.96, 0.05));
+      // 2 * atan(22.3 / (2 * 14)) = 77.07 derece. Canon APS-C'nin 22.3 mm
+      // genisligi, digerlerinin 23.5 mm'sinden kucuk — o yuzden ayni lens
+      // burada daha dar goruyor.
+      expect(s.fieldOfView.horizontalDegrees, closeTo(77.07, 0.02));
+    });
+
+    test('20 s poz 14 mm\'de siniri asiyor', () {
+      final s = CameraSettings(camera: canon, exposureSeconds: 20);
+      expect(s.exceedsLimit, isTrue);
+      expect(s.trailPixels, greaterThan(4));
+    });
+
+    test('galaktik merkeze bakinca sinir uzuyor', () {
+      final equator = CameraSettings(camera: canon);
+      final galactic = CameraSettings(
+        camera: canon,
+        targetDeclinationDegrees: -29,
+      );
+      expect(
+        galactic.maxExposureSeconds,
+        greaterThan(equator.maxExposureSeconds),
+      );
+    });
+
+    test('dikey cevirmek kadraji donduruyor', () {
+      final landscape = CameraSettings(camera: canon);
+      final portrait = CameraSettings(camera: canon, portrait: true);
+      expect(
+        portrait.fieldOfView.horizontalDegrees,
+        closeTo(landscape.fieldOfView.verticalDegrees, 1e-9),
+      );
+    });
+
+    test('500 kurali her zaman NPF\'den iyimser', () {
+      for (final f in CameraSettings.focalLengths) {
+        final s = CameraSettings(camera: canon, focalLengthMm: f);
+        expect(
+          s.fiveHundredRule,
+          greaterThan(s.maxExposureSeconds),
+          reason: '$f mm',
+        );
+      }
+    });
+
+    test('copyWith digerlerini bozmuyor', () {
+      final base = CameraSettings(camera: canon, exposureSeconds: 30);
+      final changed = base.copyWith(aperture: 4.0);
+      expect(changed.exposureSeconds, 30);
+      expect(changed.camera, canon);
+      expect(changed.aperture, 4.0);
     });
   });
 }

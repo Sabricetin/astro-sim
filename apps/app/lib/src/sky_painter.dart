@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:astro_core/astro_core.dart' as astro;
 import 'package:flutter/material.dart';
 
+import 'camera_settings.dart';
 import 'sky_model.dart';
 import 'star_style.dart';
 
@@ -27,6 +28,9 @@ class SkyPainter extends CustomPainter {
   final bool showConstellations;
   final bool showLabels;
 
+  /// Verilirse cerceve kutusu cizilir ve disi karartilir.
+  final CameraSettings? frame;
+
   /// Projeksiyon ciktisinin yazildigi tampon. Her karede yeniden
   /// ayrilmamasi icin disaridan veriliyor.
   final Float32List scratch;
@@ -41,6 +45,7 @@ class SkyPainter extends CustomPainter {
     this.showHorizon = true,
     this.showConstellations = true,
     this.showLabels = true,
+    this.frame,
   });
 
   /// Bir yildizi ekran koordinatina cevirir. Gorunmuyorsa null.
@@ -131,6 +136,65 @@ class SkyPainter extends CustomPainter {
 
     if (showLabels) {
       _paintLabels(canvas, size, pixelsPerTangent, cx, cy);
+    }
+
+    final frameSettings = frame;
+    if (frameSettings != null) {
+      _paintFrame(canvas, size, pixelsPerTangent, cx, cy, frameSettings);
+    }
+  }
+
+  /// Kadraj kutusu: secilen govde + lensin gercekte gorecegi alan.
+  ///
+  /// Boyut, gorus alaninin tanjantindan gelir — gnomonik projeksiyon
+  /// zaten rectilinear lensi modelledigi icin kutu, gercek cercevenin
+  /// birebir karsiligidir. Yaklasiklik yok.
+  void _paintFrame(
+    Canvas canvas,
+    Size size,
+    double pixelsPerTangent,
+    double cx,
+    double cy,
+    CameraSettings settings,
+  ) {
+    final fov = settings.fieldOfView;
+    final halfWidth =
+        math.tan(astro.toRadians(fov.horizontalDegrees / 2)) * pixelsPerTangent;
+    final halfHeight =
+        math.tan(astro.toRadians(fov.verticalDegrees / 2)) * pixelsPerTangent;
+    final rect = Rect.fromCenter(
+      center: Offset(cx, cy),
+      width: halfWidth * 2,
+      height: halfHeight * 2,
+    );
+
+    // Cercevenin disini karart: hangi kismin kadraja girdigi tek bakista
+    // anlasilsin.
+    final outside = Path.combine(
+      PathOperation.difference,
+      Path()..addRect(Offset.zero & size),
+      Path()..addRect(rect),
+    );
+    canvas.drawPath(outside, Paint()..color = const Color(0x99000000));
+
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4
+        ..color = const Color(0xCC7FC4E8),
+    );
+
+    // Ucte bir cizgileri — kadraj kurarken referans.
+    final guide = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.6
+      ..color = const Color(0x338FB8D4);
+    for (var i = 1; i < 3; i++) {
+      final x = rect.left + rect.width * i / 3;
+      final y = rect.top + rect.height * i / 3;
+      canvas.drawLine(Offset(x, rect.top), Offset(x, rect.bottom), guide);
+      canvas.drawLine(Offset(rect.left, y), Offset(rect.right, y), guide);
     }
   }
 
@@ -312,5 +376,6 @@ class SkyPainter extends CustomPainter {
       old.rollDegrees != rollDegrees ||
       old.showHorizon != showHorizon ||
       old.showConstellations != showConstellations ||
-      old.showLabels != showLabels;
+      old.showLabels != showLabels ||
+      old.frame != frame;
 }
