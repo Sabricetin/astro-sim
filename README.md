@@ -28,10 +28,22 @@ Bu yüzden proje, arayüz yazmadan önce **sensörü ölçmekle** başladı.
 | 0.B | Kontrollü gökyüzü çekimi | ⏸ Açık gece bekliyor |
 | 0.C | Bağımsız fon parlaklığı (VIIRS) | ⏸ |
 | 0.D | Hesap vs gerçek karşılaştırması | ⏸ |
-| 1 | Zaman ve koordinat | 🟡 Devam ediyor |
-| 2–9 | Harita, kamera, radyometri, ufuk, ürünleşme | ⬜ |
+| 1 | Zaman ve koordinat | ✅ Bitti |
+| 2 | Gökyüzü haritası | ✅ Bitti |
+| 3–9 | Kamera, radyometri, ufuk, ürünleşme | ⬜ |
 
 Ayrıntılı plan: [`yol-haritasi.md`](yol-haritasi.md)
+
+### Faz 1 — doğrulama matrisi
+
+5 yıldız × 3 konum × 3 zaman = 45 nokta, bağımsız bir kaynakla (astropy /
+ERFA / SOFA) karşılaştırıldı. Tolerans 0.1°, **en kötü sapma 0.0075°** —
+kullanılan pay %7.5.
+
+### Faz 2 — gökyüzü haritası
+
+8404 yıldız (BSC5), 110 Messier nesnesi, 8 takım yıldızı figürü.
+Çıkış kriteri gözle doğrulandı: ekranda Orion tanınıyor.
 
 ### Ölçülmüş sensör verisi — Canon EOS 760D
 

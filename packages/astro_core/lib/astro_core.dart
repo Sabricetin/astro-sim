@@ -13,6 +13,7 @@
 library;
 
 export 'src/catalog/constellations.dart';
+export 'src/catalog/messier.g.dart';
 export 'src/catalog/star_catalog.dart';
 export 'src/coords/horizontal.dart';
 export 'src/coords/precession.dart';

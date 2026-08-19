@@ -36,3 +36,5 @@ data/**/*.pef
 # Ham katalog indirmeleri — uretilen binary repoda, kaynak degil.
 data/catalog/bsc5
 data/catalog/bsc5.gz
+data/catalog/ngc2000.dat
+data/catalog/names.dat
