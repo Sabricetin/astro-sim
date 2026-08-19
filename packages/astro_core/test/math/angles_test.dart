@@ -107,4 +107,49 @@ void main() {
       expect(formatDms(0.0, decimals: 1), '+00°00′00.0″');
     });
   });
+
+  group('regresyon: kayan nokta sinir durumlari', () {
+    test('cok kucuk negatif girdi 360.0 dondurmemeli', () {
+      // 360 civarinda bir ULP ~5.7e-14. -2.9e-15'e 360 eklenince sonuc
+      // tam 360.0'a yuvarlanir ve [0, 360) sozlesmesi bozulurdu.
+      // Kutup azimutu hesabinda trigonometrik artik tam bu buyuklukte cikiyor.
+      for (final tiny in [-1e-16, -2.9e-15, -1e-14, -0.0]) {
+        final r = normalizeDegrees(tiny);
+        expect(r, greaterThanOrEqualTo(0.0), reason: '$tiny');
+        expect(r, lessThan(360.0), reason: '$tiny');
+      }
+    });
+
+    test('normalizeHours ayni tasmaya karsi korunmali', () {
+      for (final tiny in [-1e-17, -1e-16, -0.0]) {
+        final r = normalizeHours(tiny);
+        expect(r, greaterThanOrEqualTo(0.0), reason: '$tiny');
+        expect(r, lessThan(24.0), reason: '$tiny');
+      }
+    });
+  });
+
+  group('angularDifferenceDegrees', () {
+    test('tur sinirinda dogru calisir', () {
+      // Ciplak cikarma 359.9999 verirdi; dogru cevap ~0.
+      expect(
+        angularDifferenceDegrees(359.9999, 0.0).abs(),
+        closeTo(0.0001, 1e-9),
+      );
+      expect(
+        angularDifferenceDegrees(0.0, 359.9999).abs(),
+        closeTo(0.0001, 1e-9),
+      );
+    });
+
+    test('isaret yonu koruyor', () {
+      expect(angularDifferenceDegrees(10.0, 0.0), closeTo(10.0, 1e-12));
+      expect(angularDifferenceDegrees(0.0, 10.0), closeTo(-10.0, 1e-12));
+    });
+
+    test('en kisa yolu secer', () {
+      // 350 ile 10 arasi 20 derece, 340 degil.
+      expect(angularDifferenceDegrees(10.0, 350.0).abs(), closeTo(20.0, 1e-12));
+    });
+  });
 }

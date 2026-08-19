@@ -31,8 +31,13 @@ double toDegrees(double radians) => radians * degreesPerRadian;
 /// Azimut, sag acikligi ve yildiz zamani gibi tam tur donen buyuklukler icin.
 /// Negatif girdilerde de dogru calisir: `normalizeDegrees(-90)` -> `270`.
 double normalizeDegrees(double degrees) {
-  final r = degrees % 360.0;
-  return r < 0 ? r + 360.0 : r;
+  var r = degrees % 360.0;
+  if (r < 0) r += 360.0;
+  // Cok kucuk negatif girdide (ornegin -2.9e-15, trigonometrik yuvarlama
+  // artigi) 360 eklemek tam 360.0'a yuvarlanir cunku 360 civarinda bir ULP
+  // ~5.7e-14'tur. Bu, [0, 360) sozlesmesini bozar. Basa dondur.
+  if (r >= 360.0) r = 0.0;
+  return r;
 }
 
 /// Aciyi `[-180, 180)` araligina indirger.
@@ -45,10 +50,23 @@ double normalizeDegreesSigned(double degrees) {
   return r >= 180.0 ? r - 360.0 : r;
 }
 
+/// Iki aci arasindaki **en kisa isaretli fark**, `[-180, 180)`.
+///
+/// Azimut, sag aciklik ve yildiz zamani gibi tam tur donen buyuklukleri
+/// karsilastirmanin tek dogru yolu budur. Ciplak cikarma yaniltir:
+/// 359.9999 ile 0.0 aslinda ayni yondur ama farklari 359.9999 cikar.
+///
+/// T1.7 dogrulama matrisinde Stellarium ciktisiyla karsilastirirken de
+/// bu kullanilacak.
+double angularDifferenceDegrees(double a, double b) =>
+    normalizeDegreesSigned(a - b);
+
 /// Saati `[0, 24)` araligina indirger.
 double normalizeHours(double hours) {
-  final r = hours % 24.0;
-  return r < 0 ? r + 24.0 : r;
+  var r = hours % 24.0;
+  if (r < 0) r += 24.0;
+  if (r >= 24.0) r = 0.0; // bkz. normalizeDegrees: yuvarlama tasmasi
+  return r;
 }
 
 /// Saati dereceye cevirir (1 saat = 15 derece).
