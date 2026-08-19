@@ -99,10 +99,22 @@ Bu, yol haritasının "500 kuralı yalan söyler" iddiasının ekrandaki hali.
 > anın değil. Değişmesi gereken tek yer **"şu an"** satırı ve grafikteki
 > dikey imleç.
 
+### Grafiği okumak (önce bunu oku, C6 buna dayanıyor)
+
+Grafik dört şeyi üst üste bindiriyor. Soldan sağa akan eksen zaman:
+
+| Ne | Anlamı |
+|---|---|
+| **Mavi eğri** | Hedefin yüksekliği. Tepe noktası o gecenin en iyi anı. |
+| **Koyu mavi bant** | Gökyüzünün gerçekten karanlık olduğu saatler (Güneş −18°'nin altında). Alacakaranlık bu bandın dışında kalır. |
+| **Yeşil bant** | Çekim penceresi. |
+| **Yeşil yatay çizgi** | 20° eşiği — altında hava kütlesi 3'ü aşar. |
+| **Turuncu eğri** | Ay'ın yüksekliği. |
+| **Beyaz dikey çizgi** | Kaydırıcının bulunduğu an. |
+
 ### C1 — Zaman kaydırıcısı gökyüzünü döndürüyor
 **Yap:** Alt paneldeki kaydırıcıyı sürükle.
 **Bekle:** Yıldızlar dönüyor, akıcı — takılma yok.
-**Tutmazsa:** `SkyModel.atTime` kısayolu devrede değil.
 
 ### C2 — "Şu an" göstergesi kaydırıcıyı takip ediyor
 **Yap:** Alt panelde **Plan** sekmesine geç. Kaydırıcıyı oynat.
@@ -111,51 +123,71 @@ Bu, yol haritasının "500 kuralı yalan söyler" iddiasının ekrandaki hali.
 - Mavi eğri üzerindeki **nokta** yukarı/aşağı gidiyor
 - "**şu an**" satırındaki hedef yüksekliği, Ay yüksekliği ve ceza değişiyor
 
-**Tutmazsa:** Söyle — bu tam olarak senin bulduğun eksiklikti, yeni eklendi.
-
 ### C3 — Pencere değişmiyor (doğru davranış)
 **Yap:** Kaydırıcıyı gece boyunca oynat.
-**Bekle:** Üstteki `Pencere 21:38 – 00:19` satırı **sabit kalıyor.**
-Bu doğru: gece boyunca pencere aynı pencere.
-
-### C4 — Galaktik merkez 24°'yi geçmiyor
-**Yap:** Hedef: **Galaktik merkez**. Tarihi **15 Temmuz 2026**'ya getir
-(gün ok tuşlarıyla).
-**Bekle:** Grafikte mavi eğrinin tepesi **24° çizgisinin hemen altında**.
-**Neden önemli:** Projenin temel kısıtı bu. Yol haritasının "bu bir düşük
-yükseklik projesi" iddiasının ekrandaki kanıtı.
-
-### C5 — Ay evresi cezayı değiştiriyor
-**Yap:** Hedef Galaktik merkezken tarihi **15 Temmuz** → **25 Temmuz**
-yap (10 kez ileri gün).
-**Bekle:**
-
-| Tarih | Ay | Ceza | Karar |
-|---|---|---|---|
-| 15 Temmuz | %3 dolu | 0.0 kadir | 🟢 sorun değil |
-| 25 Temmuz | %88 dolu | ~4.1 kadir | 🔴 çekilemez |
-
-**Tutmazsa:** Ay efemerisi veya Krisciunas-Schaefer modeli yanlış bağlanmış.
-
-### C6 — Karanlık bandı mantıklı
-**Yap:** Grafiğe bak.
-**Bekle:** Koyu bant gecenin ortasında, yeşil pencere onun içinde kalıyor —
-yeşil bandın karanlık bandın dışına taşan kısmı olmamalı.
-
-### C7 — Farklı hedef, farklı eğri
-**Yap:** Hedefi **M31** (Andromeda Galaksisi) yap.
-**Bekle:** Eğri çok daha yükseğe çıkıyor (M31 sapması +41°, Gaziantep
-enlemi 37° — neredeyse başucundan geçiyor). Pencere uzuyor.
-
-### C8 — Ulaşılamaz hedef
-**Yap:** Hedefi **M7** yap (en güneydeki Messier nesnesi).
-**Bekle:** Eğrinin tepesi ~18°, yani 20° eşiğinin altında. Panel
-"Hedef bu gece eşik yüksekliğinin üzerine çıkmıyor" diyor, yeşil pencere
-yok.
-**Neden önemli:** Doğmak görünür olmak değil — bu ayrım Faz 5 ve 7'nin
-temeli.
+**Bekle:** Üstteki `Pencere ...` satırı **sabit kalıyor.** Gece boyunca
+pencere aynı penceredir.
 
 ---
+
+> **C4'ten C8'e kadar tarihi 15 Temmuz 2026'da tut.** Tarihe tıklayınca
+> takvim açılıyor; oradan seç. Hedefleri değiştirerek ilerleyeceğiz,
+> böylece karşılaştırma adil olur: aynı gece, farklı hedef.
+
+### C4 — Galaktik merkez 24°'yi geçmiyor
+**Yap:** Tarih **15 Temmuz 2026**, hedef **Galaktik merkez**.
+**Bekle:** Mavi eğrinin tepesi **23.9°** — yeşil 20° çizgisinin hemen
+üstünde, ucu ucuna.
+**Neden önemli:** Projenin temel kısıtı bu. "Bu bir düşük yükseklik
+projesi" iddiasının ekrandaki kanıtı.
+
+### C5 — Ay evresi cezayı değiştiriyor
+**Yap:** Hedef Galaktik merkezken tarihe tıkla, takvimden sırayla şu
+tarihleri seç. Her seferinde renkli noktalı Ay cümlesine bak.
+
+| Tarih | Ay | Ceza | Nokta | Karar |
+|---|---|---|---|---|
+| 15 Temmuz | %3 | 0.0 kadir | 🟢 | sorun degil |
+| 19 Temmuz | %35 | 0.6 kadir | 🟠 | zorlar |
+| 21 Temmuz | %55 | 1.5 kadir | 🔴 | cekilemez |
+| 25 Temmuz | %88 | 4.1 kadir | 🔴 | cekilemez |
+
+**Bekle:** Nokta yeşil → turuncu → kırmızı geçişini yapıyor, ceza
+tırmanıyor. Renk 0.5 ve 1.5 kadirde değişiyor (fon farkının gözle ayırt
+edilebilir olmaya başladığı ve difüz hedefleri bitirdiği eşikler).
+**Not:** 19 Temmuz sınıra çok yakın (0.58) — turuncu görmen gerekir.
+**Tutmazsa:** Ay efemerisi veya Krisciunas-Schaefer modeli yanlış bağlanmış.
+
+### C6 — Karanlık bandı ve pencere tutarlı
+**Yap:** Tarihi **15 Temmuz**'a geri al. Grafiğe bak.
+**Bekle:** Yeşil bant, koyu mavi bandın **içinde** kalıyor — dışına taşan
+hiçbir parçası yok.
+**Neden:** Çekim penceresi iki koşulun *kesişimi*: hedef 20°'nin üstünde
+**ve** gökyüzü karanlık. Yeşilin koyu bandın dışına taşması, alacakaranlıkta
+çekim öneriliyor demek olurdu — mantık hatası.
+
+### C7 — Yüksek hedef, uzun pencere
+**Yap:** Aynı gece (15 Temmuz), hedefi **M13** yap (Herkül Küresel Kümesi).
+**Bekle:** Eğri neredeyse **başucuna** çıkıyor (~89°), pencere ~356 dk.
+Galaktik merkezin 23.9°'sine göre dramatik fark.
+**Neden:** M13'ün sapması +36.5°, Gaziantep'in enlemi 37.1° — neredeyse tam
+tepeden geçiyor. Aynı gece, aynı yer, tamamen farklı sonuç.
+
+### C8 — Ulaşılamaz hedef
+**Yap:** Aynı gece, hedefi **M7** yap (en güneydeki Messier nesnesi).
+**Bekle:** Eğrinin tepesi **18.1°** — yeşil 20° çizgisinin **altında**
+kalıyor. Yeşil bant hiç yok. Panel "eşik yüksekliğinin üzerine çıkmıyor"
+diyor.
+**Neden önemli:** M7 doğuyor ama kullanılabilir değil. Doğmak görünür
+olmak değildir — bu ayrım Faz 5 (radyometri) ve Faz 7'nin (ufuk profili)
+temeli.
+
+### C9 — Hedef listesi çalışıyor
+**Yap:** Hedef listesini aç, birkaç farklı Messier nesnesi seç.
+**Bekle:** Listede her satır **kendi adını** gösteriyor (M1, M2, M3 …),
+seçince uygulama çökmüyor, grafik yeniden çiziliyor.
+**Not:** Burada gerçek bir hata vardı ve düzeltildi — bütün satırlar aynı
+değeri taşıdığı için seçim yapınca uygulama çöküyordu.
 
 ## Notlar
 

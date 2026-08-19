@@ -166,7 +166,7 @@ def main() -> None:
         "  double get rightAscensionHours => rightAscensionDegrees / 15.0;",
         "",
         "  /// Katalog adi: 'M31'.",
-        "  String get designation => 'M\\$number';",
+        "  String get designation => 'M$number';",
         "",
         "  @override",
         "  String toString() => designation;",

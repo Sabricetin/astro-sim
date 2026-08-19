@@ -174,6 +174,28 @@ class _SkyScreenState extends State<SkyScreen> {
     });
   }
 
+  /// Takvimden tarih secimi. Gunun saatini korur — kullanici gece
+  /// yarisina ayarladigi saati her tarih degisiminde yeniden bulmak
+  /// zorunda kalmasin.
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _utc,
+      firstDate: DateTime.utc(2000),
+      lastDate: DateTime.utc(2050),
+    );
+    if (picked == null || !mounted) return;
+    _setTime(
+      DateTime.utc(
+        picked.year,
+        picked.month,
+        picked.day,
+        _utc.hour,
+        _utc.minute,
+      ),
+    );
+  }
+
   void _applyPreset(ViewPreset p) {
     setState(() {
       _azimuth = p.azimuth;
@@ -418,13 +440,29 @@ class _SkyScreenState extends State<SkyScreen> {
                 icon: const Icon(Icons.chevron_left),
                 tooltip: '-1 saat',
               ),
-              const SizedBox(width: 10),
-              Text(
-                '${_utc.year}-${_utc.month.toString().padLeft(2, '0')}-'
-                '${_utc.day.toString().padLeft(2, '0')}',
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              const SizedBox(width: 4),
+              // Tarihe basinca takvim acilir. Ay evresinin plani nasil
+              // degistirdigini gormek icin hafta atlamak gerekiyor; bunu
+              // +1 gun dugmesine on kez basarak yapmak test edilebilir
+              // bir davranis degil.
+              TextButton(
+                onPressed: _pickDate,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  '${_utc.year}-${_utc.month.toString().padLeft(2, '0')}-'
+                  '${_utc.day.toString().padLeft(2, '0')}',
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    color: Color(0xFFDDE8F2),
+                  ),
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 4),
               IconButton.filledTonal(
                 onPressed: () => _setTime(_utc.add(const Duration(hours: 1))),
                 icon: const Icon(Icons.chevron_right),

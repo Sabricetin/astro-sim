@@ -5,6 +5,7 @@ import 'package:astro_core/astro_core.dart';
 import 'package:astro_sim/src/sky_model.dart';
 import 'package:astro_sim/src/camera_settings.dart';
 import 'package:astro_sim/src/star_style.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Katalogu dosyadan okur. Widget testinde rootBundle yerine dogrudan
@@ -238,6 +239,55 @@ void main() {
         later.altitudeDegrees(i),
       );
       expect(moved, greaterThan(20));
+    });
+  });
+
+  group('Hedef acilir listesi — cokme regresyonu', () {
+    // Uygulama Messier hedefi secilince cokuyordu: designation getter'i
+    // her nesne icin ayni metni donduruyordu, 110 ogenin degeri
+    // ayni oluyordu ve DropdownButton "tam olarak bir oge eslesmeli"
+    // onermesinde patliyordu. Bu test o acilir listeyi main.dart'taki
+    // gibi kurup gercekten bir Messier hedefi secili halde ciziyor.
+    Widget dropdownWithValue(String value) => MaterialApp(
+      home: Scaffold(
+        body: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          items: [
+            const DropdownMenuItem(
+              value: 'Galaktik merkez',
+              child: Text('Galaktik merkez'),
+            ),
+            for (final m in messierCatalog)
+              DropdownMenuItem(
+                value: m.designation,
+                child: Text(m.designation),
+              ),
+          ],
+          onChanged: (_) {},
+        ),
+      ),
+    );
+
+    testWidgets('Messier hedefi secili halde cizilebiliyor', (tester) async {
+      await tester.pumpWidget(dropdownWithValue('M31'));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('varsayilan hedef de cizilebiliyor', (tester) async {
+      await tester.pumpWidget(dropdownWithValue('Galaktik merkez'));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('listedeki her hedef secilebilir durumda', (tester) async {
+      // Tek tek pump etmek yavas; degerlerin benzersizligi acilir
+      // listenin onermesiyle ayni sey.
+      final values = [
+        'Galaktik merkez',
+        ...messierCatalog.map((m) => m.designation),
+      ];
+      expect(values.toSet().length, values.length);
+      expect(values.length, 111);
     });
   });
 }
