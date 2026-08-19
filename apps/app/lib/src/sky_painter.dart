@@ -152,16 +152,18 @@ class SkyPainter extends CustomPainter {
   /// karsiligi da var: hedefin dogru yonde olup olmadigini gozle dogrulamanin
   /// en hizli yolu. Orion'un guneyde cikmasi gerektigini bilen biri, bu
   /// isaretler olmadan emin olamaz.
-  static const _compassPoints = <double, String>{
-    0: 'K',
-    45: 'KD',
-    90: 'D',
-    135: 'GD',
-    180: 'G',
-    225: 'GB',
-    270: 'B',
-    315: 'KB',
-  };
+  // Liste, Map degil: Dart const Map'te double anahtar kabul etmiyor
+  // (double == operatorunu ezdigi icin).
+  static const _compassPoints = <({double azimuth, String label})>[
+    (azimuth: 0, label: 'K'),
+    (azimuth: 45, label: 'KD'),
+    (azimuth: 90, label: 'D'),
+    (azimuth: 135, label: 'GD'),
+    (azimuth: 180, label: 'G'),
+    (azimuth: 225, label: 'GB'),
+    (azimuth: 270, label: 'B'),
+    (azimuth: 315, label: 'KB'),
+  ];
 
   void _paintCompass(
     Canvas canvas,
@@ -170,9 +172,9 @@ class SkyPainter extends CustomPainter {
     double cx,
     double cy,
   ) {
-    for (final entry in _compassPoints.entries) {
+    for (final point in _compassPoints) {
       final p = astro.project(
-        azimuthDegrees: entry.key,
+        azimuthDegrees: point.azimuth,
         altitudeDegrees: 0.0,
         centerAzimuthDegrees: centerAzimuthDegrees,
         centerAltitudeDegrees: centerAltitudeDegrees,
@@ -186,7 +188,7 @@ class SkyPainter extends CustomPainter {
 
       final painter = TextPainter(
         text: TextSpan(
-          text: entry.value,
+          text: point.label,
           style: const TextStyle(
             color: Color(0x997FA8C4),
             fontSize: 13,
