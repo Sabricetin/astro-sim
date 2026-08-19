@@ -46,11 +46,28 @@ class NightPanel extends StatelessWidget {
         '${t.minute.toString().padLeft(2, '0')}';
   }
 
+  /// Ekranda gosterilen ceza degeri. Renk ve metin ikisi de BUNU
+  /// kullanir, ham degeri degil.
+  ///
+  /// Sebebi: ham deger bir ondalige yuvarlanarak yaziliyor ve yuvarlama
+  /// esigin obur tarafina gecebiliyor. 24 Mayis 2026'da gercek ceza
+  /// 1.4643 — ekranda "1.5 kadir" yaziyor ama nokta turuncu, cunku renk
+  /// 1.4643 < 1.5 diye karar veriyor. Kullanici "1.5 yaziyor ama kirmizi
+  /// degil" diye hakli olarak sasiriyor. Yil boyunca bu 5 gun oluyor.
+  ///
+  /// Esikler zaten keskin fiziksel sabitler degil (0.5 gozle ayirt
+  /// edilebilirligin, 1.5 difuz hedeflerin bogulmasinin kabaca siniri),
+  /// o yuzden gosterilen degere hizalamanin fiziksel bir bedeli yok.
+  /// Kazanc: gordugun sayi ile gordugun renk hicbir zaman celismiyor.
+  double _shownPenalty(double penalty) =>
+      double.parse(penalty.toStringAsFixed(1));
+
   /// Ay cezasini karara cevirir.
   ///
   /// Esikler fiziksel: 0.5 kadir altinda fon farki gozle ayirt edilmez,
   /// 1.5 uzeri difuz hedefleri (Samanyolu, bulutsu) bogar.
-  ({Color color, String verdict}) _moonVerdict(double penalty) {
+  ({Color color, String verdict}) _moonVerdict(double rawPenalty) {
+    final penalty = _shownPenalty(rawPenalty);
     if (penalty < 0.5) {
       return (color: const Color(0xFF5FD08A), verdict: 'sorun degil');
     }
@@ -193,7 +210,9 @@ class NightPanel extends StatelessWidget {
     if (plan.moonSet != null) {
       buffer.write(", ${_local(plan.moonSet!)}'te batiyor");
     }
-    buffer.write(' — ${penalty.toStringAsFixed(1)} kadir, $verdict');
+    buffer.write(
+      ' — ${_shownPenalty(penalty).toStringAsFixed(1)} kadir, $verdict',
+    );
     return buffer.toString();
   }
 }

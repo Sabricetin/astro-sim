@@ -148,14 +148,16 @@ tarihleri seç. Her seferinde renkli noktalı Ay cümlesine bak.
 | Tarih | Ay | Ceza | Nokta | Karar |
 |---|---|---|---|---|
 | 15 Temmuz | %3 | 0.0 kadir | 🟢 | sorun degil |
-| 19 Temmuz | %35 | 0.6 kadir | 🟠 | zorlar |
-| 21 Temmuz | %55 | 1.5 kadir | 🔴 | cekilemez |
+| 19 Temmuz | %35 | 0.6 kadir | 🟠 | dikkat |
+| 21 Temmuz | %55 | **1.4 kadir** | 🟠 | **dikkat** |
+| 23 Temmuz | %73 | 2.6 kadir | 🔴 | cekilemez |
 | 25 Temmuz | %88 | 4.1 kadir | 🔴 | cekilemez |
 
 **Bekle:** Nokta yeşil → turuncu → kırmızı geçişini yapıyor, ceza
 tırmanıyor. Renk 0.5 ve 1.5 kadirde değişiyor (fon farkının gözle ayırt
 edilebilir olmaya başladığı ve difüz hedefleri bitirdiği eşikler).
-**Not:** 19 Temmuz sınıra çok yakın (0.58) — turuncu görmen gerekir.
+**Not:** 21 Temmuz sınıra çok yakın: gerçek değer 1.4499, yani 1.5'in
+**altında** — turuncu doğru. Kırmızıyı ilk 23 Temmuz'da görürsün.
 **Tutmazsa:** Ay efemerisi veya Krisciunas-Schaefer modeli yanlış bağlanmış.
 
 ### C6 — Karanlık bandı ve pencere tutarlı

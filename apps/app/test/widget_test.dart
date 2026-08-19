@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:astro_core/astro_core.dart';
 import 'package:astro_sim/src/sky_model.dart';
 import 'package:astro_sim/src/camera_settings.dart';
+import 'package:astro_sim/src/night_panel.dart';
 import 'package:astro_sim/src/star_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -288,6 +289,64 @@ void main() {
       ];
       expect(values.toSet().length, values.length);
       expect(values.length, 111);
+    });
+  });
+
+  group('Ay cezasi — gosterilen deger ile renk celismiyor', () {
+    // 24 Mayis 2026'da gercek ceza 1.4643: ekranda "1.5 kadir" yaziliyor
+    // ama renk esigi ham degere bakinca turuncu kaliyor. Kullanici
+    // "1.5 yaziyor, neden kirmizi degil" diye hakli olarak sasirir.
+    // Renk artik gosterilen sayidan turuyor.
+    final gaziantep = Observer(
+      latitudeDegrees: 37.0662,
+      longitudeEastDegrees: 37.3833,
+      elevationMeters: 850,
+    );
+    final galacticCenter = Equatorial.fromHours(
+      rightAscensionHours: 17 + 45 / 60 + 40.0 / 3600,
+      declinationDegrees: -(29 + 28.0 / 3600),
+    );
+
+    testWidgets('yil boyunca hicbir gunde sayi ile renk celismiyor', (
+      tester,
+    ) async {
+      final conflicts = <String>[];
+      for (var d = 1; d <= 365; d++) {
+        final utc = DateTime.utc(2026, 1, 1, 22).add(Duration(days: d));
+        final plan = planNight(
+          target: galacticCenter,
+          observer: gaziantep,
+          aroundUtc: utc,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: NightPanel(
+                plan: plan,
+                targetName: 'Galaktik merkez',
+                currentUtc: utc,
+                localOffset: const Duration(hours: 3),
+              ),
+            ),
+          ),
+        );
+        final shown = double.parse(plan.worstMoonPenalty.toStringAsFixed(1));
+        // Metinde gecen sayi ile renk ayni esik tarafinda olmali.
+        final text = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data ?? '')
+            .firstWhere((t) => t.contains('kadir,'), orElse: () => '');
+        if (text.isEmpty) continue;
+        final expected = shown < 0.5
+            ? 'sorun degil'
+            : shown < 1.5
+            ? 'dikkat'
+            : 'cekilemez';
+        if (!text.contains(expected)) {
+          conflicts.add('${utc.toIso8601String().substring(0, 10)}: $text');
+        }
+      }
+      expect(conflicts, isEmpty, reason: conflicts.take(5).join('\n'));
     });
   });
 }
