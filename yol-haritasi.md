@@ -276,6 +276,29 @@ Faz 0'daki spike kodu buraya taşınıyor ve olgunlaşıyor. Bu faz projenin var
 | 5.13 | Ton eğrisi → ekran görüntüsü (kalibre değil, sadece illüstrasyon — bunu arayüzde açıkça belirt) |
 | 5.14 | **KALİBRASYON:** Faz 0.B'deki merdivenle + varsa yeni karelerle karşılaştır |
 
+### Uygulama sırası kararı — 18 Ağustos 2026
+
+Faz 5, Faz 0.B (kontrollü gökyüzü çekimi), 0.C (VIIRS fon parlaklığı) ve
+0.D (hesap–gerçek karşılaştırması) bitmeden **kalibre edilemez.** Bunlar
+açık ve ay'sız bir gece bekliyor; takvim havaya bağlı.
+
+**Seçilen yol: iskeleti önce yaz.** Fizik zinciri (kadir → foton akısı →
+sönüm → optik → sensör → gürültü → SNR) kalibrasyon beklemeden kurulur;
+gece geldiğinde tek bir ölçülmüş katsayıyla bağlanır.
+
+**Bu yolun tek şartı — pazarlıksız:**
+
+> İskelet hiçbir uydurma sabit içermez. Kalibrasyonu gelmemiş her
+> büyüklük, varsayılan değer taşımak yerine **hesap yapmayı reddeder.**
+
+Yani `KalibrasyonEksik` gibi açık bir durum döner; "şimdilik 0.9 koyalım,
+sonra düzeltiriz" yapılmaz. Sebebi bu belgenin baştan beri söylediği şey:
+zincirin bir halkası uydurmaysa çıktı da uydurmadır. Geçici bir sabit
+konursa test yeşile döner, ekran sayı gösterir ve hangi sayının ölçülmüş
+hangisinin uydurma olduğu bir hafta sonra ayırt edilemez hale gelir.
+
+Uydurmanın maliyeti yanlış sonuç değil — **yanlış olduğunu bilememek.**
+
 **Çıkış kriteri (iki parçalı, ikisi de gerekli):**
 1. Fon seviyesi, bağımsız ölçülmüş (VIIRS/SQM) fon parlaklığına karşı **%15 içinde**
 2. Hata ISO, poz süresi ve **hedef yüksekliği** boyunca tutarlı — sistematik bir eğilim göstermiyor
