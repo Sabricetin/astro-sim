@@ -61,6 +61,35 @@ double normalizeDegreesSigned(double degrees) {
 double angularDifferenceDegrees(double a, double b) =>
     normalizeDegreesSigned(a - b);
 
+/// Kure uzerindeki iki nokta arasindaki aci, derece.
+///
+/// Hem ekvatoral (RA/Dec) hem ufuk (Az/Alt) koordinatlari icin calisir:
+/// ilk arguman tam tur donen eksen (RA veya azimut), ikincisi kutup ekseni
+/// (sapma veya yukseklik).
+///
+/// Haversine kullanilir, `cos(d)` formulu degil: kucuk ayrimlarda `acos`
+/// hassasiyet kaybeder ve tam bizim ilgilendigimiz aralikta (0.1 derece
+/// altinda) gurultuye bogulur. T1.7'de Stellarium ile karsilastirma
+/// yaparken olculecek buyukluk budur.
+double angularSeparationDegrees(
+  double longitude1,
+  double latitude1,
+  double longitude2,
+  double latitude2,
+) {
+  final lat1 = toRadians(latitude1);
+  final lat2 = toRadians(latitude2);
+  final dLat = lat2 - lat1;
+  final dLon = toRadians(longitude2 - longitude1);
+
+  final sinHalfLat = math.sin(dLat / 2);
+  final sinHalfLon = math.sin(dLon / 2);
+  final a =
+      sinHalfLat * sinHalfLat +
+      math.cos(lat1) * math.cos(lat2) * sinHalfLon * sinHalfLon;
+  return toDegrees(2 * math.asin(math.sqrt(a).clamp(0.0, 1.0)));
+}
+
 /// Saati `[0, 24)` araligina indirger.
 double normalizeHours(double hours) {
   var r = hours % 24.0;

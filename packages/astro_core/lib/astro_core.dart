@@ -13,6 +13,8 @@
 library;
 
 export 'src/coords/horizontal.dart';
+export 'src/coords/precession.dart';
+export 'src/coords/refraction.dart';
 export 'src/coords/types.dart';
 export 'src/math/angles.dart';
 export 'src/time/julian_day.dart';
