@@ -170,4 +170,74 @@ void main() {
       expect(changed.aperture, 4.0);
     });
   });
+
+  group('SkyModel.atTime — Faz 4 zaman kaydiricisi', () {
+    final gaziantep = Observer(
+      latitudeDegrees: 37.0662,
+      longitudeEastDegrees: 37.3833,
+    );
+
+    test('presesyon yeniden hesaplanmadan ayni sonucu veriyor', () {
+      // atTime, tam hesabin kisayolu. Bir gece icinde presesyon ~0.0001
+      // derece degistigi icin ikisi ayni sonucu vermeli — vermezse
+      // kisayol yanlis demektir.
+      final base = SkyModel.compute(
+        catalog: catalog,
+        utc: DateTime.utc(2026, 7, 15, 20),
+        observer: gaziantep,
+      );
+      final shortcut = base.atTime(DateTime.utc(2026, 7, 15, 23));
+      final full = SkyModel.compute(
+        catalog: catalog,
+        utc: DateTime.utc(2026, 7, 15, 23),
+        observer: gaziantep,
+      );
+
+      var worst = 0.0;
+      for (var i = 0; i < catalog.length; i++) {
+        final d = angularSeparationDegrees(
+          shortcut.azimuthDegrees(i),
+          shortcut.altitudeDegrees(i),
+          full.azimuthDegrees(i),
+          full.altitudeDegrees(i),
+        );
+        if (d > worst) worst = d;
+      }
+      // Projenin toleransi 0.1 derece; kisayolun sapmasi onun binde biri
+      // altinda kalmali.
+      expect(worst, lessThan(0.0001), reason: 'en kotu sapma $worst derece');
+    });
+
+    test('kova ve indeks yapilari paylasiliyor', () {
+      final base = SkyModel.compute(
+        catalog: catalog,
+        utc: DateTime.utc(2026, 7, 15, 20),
+        observer: gaziantep,
+      );
+      final later = base.atTime(DateTime.utc(2026, 7, 15, 23));
+      // Ayni nesneye bakmali — kopyalanirsa her kaydirmada 8404 elemanlik
+      // diziler yeniden ayrilirdi.
+      expect(identical(later.bucket, base.bucket), isTrue);
+      expect(identical(later.orderByBucket, base.orderByBucket), isTrue);
+      expect(identical(later.indexByHr, base.indexByHr), isTrue);
+    });
+
+    test('gokyuzu gercekten donuyor', () {
+      final base = SkyModel.compute(
+        catalog: catalog,
+        utc: DateTime.utc(2026, 7, 15, 20),
+        observer: gaziantep,
+      );
+      final later = base.atTime(DateTime.utc(2026, 7, 15, 26 - 3));
+      // Uc saatte gokyuzu ~45 derece donmeli.
+      final i = catalog.hrNumbers.indexOf(7001); // Vega
+      final moved = angularSeparationDegrees(
+        base.azimuthDegrees(i),
+        base.altitudeDegrees(i),
+        later.azimuthDegrees(i),
+        later.altitudeDegrees(i),
+      );
+      expect(moved, greaterThan(20));
+    });
+  });
 }

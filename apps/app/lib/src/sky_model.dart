@@ -18,6 +18,13 @@ class SkyModel {
   /// Katalogla ayni sirada.
   final Float32List horizontal;
 
+  /// Presesyonla tarihe tasinmis RA/Dec, yildiz basina iki deger.
+  ///
+  /// Presesyon bir gecede ~0.0001 derece degisir — yani pratikte sabit.
+  /// Ayri tutuluyor ki zaman kaydiricisi oynatildiginda 8404 yildiz icin
+  /// presesyon YENIDEN HESAPLANMASIN; sadece alt/az guncellensin.
+  final Float32List precessedEquatorial;
+
   /// Cizim kovasi indeksi (boyut sinifi + renk sinifi birlesik).
   ///
   /// Kovalar onceden siralanmis oldugu icin cizim kodu tek bir gecisle
@@ -42,6 +49,7 @@ class SkyModel {
   const SkyModel._({
     required this.catalog,
     required this.horizontal,
+    required this.precessedEquatorial,
     required this.bucket,
     required this.orderByBucket,
     required this.bucketStart,
@@ -115,6 +123,7 @@ class SkyModel {
   }) {
     final n = catalog.length;
     final horizontal = Float32List(n * 2);
+    final precessed = Float32List(n * 2);
     final bucket = Uint8List(n);
 
     final jd = julianDay(utc);
@@ -128,6 +137,9 @@ class SkyModel {
         ),
         toJd: jd,
       );
+      precessed[i * 2] = ofDate.rightAscensionDegrees;
+      precessed[i * 2 + 1] = ofDate.declinationDegrees;
+
       final h = equatorialToHorizontal(
         equatorial: ofDate,
         observer: observer,
@@ -159,11 +171,54 @@ class SkyModel {
     return SkyModel._(
       catalog: catalog,
       horizontal: horizontal,
+      precessedEquatorial: precessed,
       bucket: bucket,
       orderByBucket: order,
       bucketStart: bucketStart,
       indexByHr: {for (var i = 0; i < n; i++) catalog.hrNumbers[i]: i},
       utc: utc,
+      observer: observer,
+    );
+  }
+
+  /// Ayni gece icinde zamani ilerletir.
+  ///
+  /// Presesyon, kova siniflari ve HR indeksi yeniden hesaplanmaz —
+  /// hicbiri bir gece icinde anlamli sekilde degismez. Sadece alt/az
+  /// guncellenir, yani zaman kaydiricisi akici kalir.
+  ///
+  /// Farkli bir GUNE gecerken [SkyModel.compute] kullanilmali; presesyon
+  /// orada yeniden yapilir.
+  SkyModel atTime(DateTime newUtc) {
+    final n = catalog.length;
+    final updated = Float32List(n * 2);
+    final lst = localMeanSiderealTimeDegrees(
+      julianDay(newUtc),
+      observer.longitudeEastDegrees,
+    );
+
+    for (var i = 0; i < n; i++) {
+      final h = equatorialToHorizontal(
+        equatorial: Equatorial(
+          rightAscensionDegrees: precessedEquatorial[i * 2],
+          declinationDegrees: precessedEquatorial[i * 2 + 1],
+        ),
+        observer: observer,
+        localSiderealTimeDegrees: lst,
+      );
+      updated[i * 2] = h.azimuthDegrees;
+      updated[i * 2 + 1] = h.altitudeDegrees;
+    }
+
+    return SkyModel._(
+      catalog: catalog,
+      horizontal: updated,
+      precessedEquatorial: precessedEquatorial,
+      bucket: bucket,
+      orderByBucket: orderByBucket,
+      bucketStart: bucketStart,
+      indexByHr: indexByHr,
+      utc: newUtc,
       observer: observer,
     );
   }

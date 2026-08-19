@@ -28,6 +28,7 @@ export 'src/coords/refraction.dart';
 export 'src/coords/types.dart';
 export 'src/math/angles.dart';
 export 'src/optics/gnomonic.dart';
+export 'src/planning/night_plan.dart';
 export 'src/photometry/color_index.dart';
 export 'src/time/julian_day.dart';
 export 'src/time/sidereal_time.dart';

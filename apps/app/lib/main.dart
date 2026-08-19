@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'src/camera_panel.dart';
+import 'src/night_panel.dart';
 import 'src/camera_settings.dart';
 import 'src/sky_model.dart';
 import 'src/sky_painter.dart';
@@ -78,6 +79,34 @@ class _SkyScreenState extends State<SkyScreen> {
     camera: cameras.first, // Canon EOS 760D — kalibrasyonu yapilan govde
   );
 
+  /// Alt panelde kamera mi plan mi gorunuyor.
+  bool _showPlan = false;
+
+  /// Secili hedef. Galaktik merkez katalogda yok — projenin baslik hedefi
+  /// oldugu icin elle ekleniyor.
+  static final galacticCenter = Equatorial.fromHours(
+    rightAscensionHours: 17 + 45 / 60 + 40.0 / 3600,
+    declinationDegrees: -(29 + 28.0 / 3600),
+  );
+  Equatorial _target = galacticCenter;
+  String _targetName = 'Galaktik merkez';
+  NightPlan? _plan;
+
+  /// Gaziantep icin kaba yerel saat farki. Gosterim icin; hesap hep UTC.
+  static const _localOffset = Duration(hours: 3);
+
+  void _recomputePlan() {
+    _plan = planNight(target: _target, observer: gaziantep, aroundUtc: _utc);
+  }
+
+  void _selectTarget(Equatorial target, String name) {
+    setState(() {
+      _target = target;
+      _targetName = name;
+      _recomputePlan();
+    });
+  }
+
   /// Ekran ortasindaki noktanin sapmasi. NPF duzeltmesi bunu kullanir:
   /// kutba yakin hedeflerde daha uzun poz verilebilir.
   double get _centerDeclination {
@@ -116,6 +145,7 @@ class _SkyScreenState extends State<SkyScreen> {
           utc: _utc,
           observer: gaziantep,
         );
+        _recomputePlan();
       });
     } catch (e) {
       setState(() => _error = e);
@@ -123,12 +153,24 @@ class _SkyScreenState extends State<SkyScreen> {
   }
 
   /// Zaman degisince gokyuzu yeniden hesaplanir — panlamada DEGIL.
-  void _setTime(DateTime utc) {
+  ///
+  /// Ayni gun icinde kaliniyorsa presesyon tekrarlanmaz ([SkyModel.atTime]);
+  /// zaman kaydiricisi bu sayede akici kaliyor.
+  void _setTime(DateTime utc, {bool recomputePlan = true}) {
     final catalog = _catalog;
+    final sky = _sky;
     if (catalog == null) return;
     setState(() {
+      final sameDay =
+          sky != null &&
+          sky.utc.year == utc.year &&
+          sky.utc.month == utc.month &&
+          sky.utc.day == utc.day;
       _utc = utc;
-      _sky = SkyModel.compute(catalog: catalog, utc: utc, observer: gaziantep);
+      _sky = sameDay
+          ? sky.atTime(utc)
+          : SkyModel.compute(catalog: catalog, utc: utc, observer: gaziantep);
+      if (recomputePlan) _recomputePlan();
     });
   }
 
@@ -325,14 +367,40 @@ class _SkyScreenState extends State<SkyScreen> {
             ),
           ),
           const Spacer(),
-          CameraPanel(
-            settings: _settings.copyWith(
-              targetDeclinationDegrees: _centerDeclination,
-            ),
-            onChanged: (s) => setState(() => _settings = s),
-            showFrame: _showFrame,
-            onShowFrameChanged: (v) => setState(() => _showFrame = v),
+          _timeSlider(),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Kamera')),
+                  ButtonSegment(value: true, label: Text('Plan')),
+                ],
+                selected: {_showPlan},
+                onSelectionChanged: (v) => setState(() => _showPlan = v.first),
+              ),
+              if (_showPlan) ...[
+                const SizedBox(width: 12),
+                Expanded(child: _targetSelector()),
+              ],
+            ],
           ),
+          const SizedBox(height: 8),
+          if (_showPlan && _plan != null)
+            NightPanel(
+              plan: _plan!,
+              targetName: _targetName,
+              localOffset: _localOffset,
+            )
+          else
+            CameraPanel(
+              settings: _settings.copyWith(
+                targetDeclinationDegrees: _centerDeclination,
+              ),
+              onChanged: (s) => setState(() => _settings = s),
+              showFrame: _showFrame,
+              onShowFrameChanged: (v) => setState(() => _showFrame = v),
+            ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -353,6 +421,82 @@ class _SkyScreenState extends State<SkyScreen> {
         ],
       ),
     ),
+  );
+
+  /// T4.1 — dakika hassasiyetinde zaman kaydiricisi.
+  ///
+  /// Gunun ortasina gore -12 / +12 saat. Kaydirdikca yildizlar donuyor;
+  /// gokyuzunun gercekten hareket ettigini gormek, aracin dogru
+  /// calistigina dair en hizli sezgisel kontrol.
+  Widget _timeSlider() {
+    final dayStart = DateTime.utc(_utc.year, _utc.month, _utc.day);
+    final minutes = _utc.difference(dayStart).inMinutes.toDouble();
+    return Row(
+      children: [
+        SizedBox(
+          width: 116,
+          child: Text(
+            '${_utc.add(_localOffset).hour.toString().padLeft(2, '0')}:'
+            '${_utc.add(_localOffset).minute.toString().padLeft(2, '0')} yerel',
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          ),
+        ),
+        Expanded(
+          child: Slider(
+            value: minutes,
+            min: 0,
+            max: 1439,
+            divisions: 1439,
+            onChanged: (v) => _setTime(
+              dayStart.add(Duration(minutes: v.round())),
+              // Plan gece boyunca ayni; her dakikada yeniden hesaplamak
+              // gereksiz ve kaydiriciyi tutuklastirir.
+              recomputePlan: false,
+            ),
+            onChangeEnd: (_) => setState(_recomputePlan),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Hedef secimi: galaktik merkez + Messier katalogu.
+  Widget _targetSelector() => DropdownButton<String>(
+    value: _targetName,
+    isExpanded: true,
+    isDense: true,
+    underline: const SizedBox.shrink(),
+    style: const TextStyle(fontSize: 13, color: Color(0xFFDDE8F2)),
+    dropdownColor: const Color(0xFF10171F),
+    items: [
+      const DropdownMenuItem(
+        value: 'Galaktik merkez',
+        child: Text('Galaktik merkez'),
+      ),
+      for (final m in messierCatalog)
+        DropdownMenuItem(
+          value: m.designation,
+          child: Text(
+            '${m.designation}  ${messierTypeNames[m.type] ?? m.type}'
+            '${m.magnitude != null ? "  ${m.magnitude}" : ""}',
+          ),
+        ),
+    ],
+    onChanged: (name) {
+      if (name == null) return;
+      if (name == 'Galaktik merkez') {
+        _selectTarget(galacticCenter, name);
+        return;
+      }
+      final m = messierCatalog.firstWhere((o) => o.designation == name);
+      _selectTarget(
+        Equatorial(
+          rightAscensionDegrees: m.rightAscensionDegrees,
+          declinationDegrees: m.declinationDegrees,
+        ),
+        name,
+      );
+    },
   );
 
   /// Yatay gorus alanindan esdeger tam kare odak uzunlugu, mm.

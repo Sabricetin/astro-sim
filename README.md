@@ -30,7 +30,9 @@ Bu yüzden proje, arayüz yazmadan önce **sensörü ölçmekle** başladı.
 | 0.D | Hesap vs gerçek karşılaştırması | ⏸ |
 | 1 | Zaman ve koordinat | ✅ Bitti |
 | 2 | Gökyüzü haritası | ✅ Bitti |
-| 3–9 | Kamera, radyometri, ufuk, ürünleşme | ⬜ |
+| 3 | Kamera ve kadraj | ✅ Bitti |
+| 4 | Zaman ve gökyüzü olayları | ✅ Bitti |
+| 5–9 | Radyometri, Samanyolu, ufuk, ürünleşme | ⬜ |
 
 Ayrıntılı plan: [`yol-haritasi.md`](yol-haritasi.md)
 
@@ -44,6 +46,16 @@ kullanılan pay %7.5.
 
 8404 yıldız (BSC5), 110 Messier nesnesi, 8 takım yıldızı figürü.
 Çıkış kriteri gözle doğrulandı: ekranda Orion tanınıyor.
+
+### Faz 4 — gece planı
+
+Araç artık şu cümleyi kuruyor:
+
+> Pencere 21:38 – 00:19 (161 dk), zirve 24°
+> Ay %3 dolu, 20:55'te batıyor — 0.0 kadir, sorun değil
+
+Ay'ın fon parlaklığına katkısı Krisciunas & Schaefer (1991) modeliyle
+hesaplanıyor; Faz 5 radyometrisinin doğrudan girdisi.
 
 ### Ölçülmüş sensör verisi — Canon EOS 760D
 
