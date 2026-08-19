@@ -31,27 +31,41 @@ void main() {
     test('artik yil: 2000 artik, 1900 degil', () {
       // 1900 Gregoryen'de artik DEGIL (yuzyil kurali). Subat sonundan
       // Mart basina gecis bunu ortaya cikarir.
-      expect(julianDay(DateTime.utc(1900, 3, 1)) -
-          julianDay(DateTime.utc(1900, 2, 28)), 1.0);
+      expect(
+        julianDay(DateTime.utc(1900, 3, 1)) -
+            julianDay(DateTime.utc(1900, 2, 28)),
+        1.0,
+      );
       // 2000 artik (400'e bolunuyor): 29 Subat var.
-      expect(julianDay(DateTime.utc(2000, 3, 1)) -
-          julianDay(DateTime.utc(2000, 2, 28)), 2.0);
+      expect(
+        julianDay(DateTime.utc(2000, 3, 1)) -
+            julianDay(DateTime.utc(2000, 2, 28)),
+        2.0,
+      );
     });
 
     test('gun icindeki kesir dogru', () {
       final midnight = julianDay(DateTime.utc(2026, 8, 19));
-      expect(julianDay(DateTime.utc(2026, 8, 19, 6)) - midnight,
-          closeTo(0.25, 1e-12));
-      expect(julianDay(DateTime.utc(2026, 8, 19, 12)) - midnight,
-          closeTo(0.50, 1e-12));
-      expect(julianDay(DateTime.utc(2026, 8, 19, 18)) - midnight,
-          closeTo(0.75, 1e-12));
+      expect(
+        julianDay(DateTime.utc(2026, 8, 19, 6)) - midnight,
+        closeTo(0.25, 1e-12),
+      );
+      expect(
+        julianDay(DateTime.utc(2026, 8, 19, 12)) - midnight,
+        closeTo(0.50, 1e-12),
+      );
+      expect(
+        julianDay(DateTime.utc(2026, 8, 19, 18)) - midnight,
+        closeTo(0.75, 1e-12),
+      );
     });
 
     test('ardisik gunler tam 1.0 fark eder', () {
       var previous = julianDay(DateTime.utc(2026, 1, 1));
       for (var i = 1; i <= 365; i++) {
-        final current = julianDay(DateTime.utc(2026, 1, 1).add(Duration(days: i)));
+        final current = julianDay(
+          DateTime.utc(2026, 1, 1).add(Duration(days: i)),
+        );
         expect(current - previous, closeTo(1.0, 1e-9), reason: '$i. gun');
         previous = current;
       }
@@ -68,13 +82,15 @@ void main() {
       expect(julianDayFromCalendar(-4712, 1, 1.5), closeTo(0.0, 1e-6));
     });
 
-    test('takvim gecisi: 1582-10-04 (Julian) ve 1582-10-15 (Gregoryen) ardisik',
-        () {
-      // Tarihsel olarak 4 Ekim'i 15 Ekim izledi; aradaki 10 gun atlandi.
-      final lastJulian = julianDayFromCalendar(1582, 10, 4.0);
-      final firstGregorian = julianDayFromCalendar(1582, 10, 15.0);
-      expect(firstGregorian - lastJulian, closeTo(1.0, 1e-9));
-    });
+    test(
+      'takvim gecisi: 1582-10-04 (Julian) ve 1582-10-15 (Gregoryen) ardisik',
+      () {
+        // Tarihsel olarak 4 Ekim'i 15 Ekim izledi; aradaki 10 gun atlandi.
+        final lastJulian = julianDayFromCalendar(1582, 10, 4.0);
+        final firstGregorian = julianDayFromCalendar(1582, 10, 15.0);
+        expect(firstGregorian - lastJulian, closeTo(1.0, 1e-9));
+      },
+    );
   });
 
   group('dateTimeFromJulianDay — ters donusum', () {
@@ -96,9 +112,11 @@ void main() {
       ];
       for (final utc in samples) {
         final round = dateTimeFromJulianDay(julianDay(utc));
-        expect(round.difference(utc).inMicroseconds.abs(),
-            lessThanOrEqualTo(julianDayResolutionMicroseconds),
-            reason: '$utc -> ${julianDay(utc)} -> $round');
+        expect(
+          round.difference(utc).inMicroseconds.abs(),
+          lessThanOrEqualTo(julianDayResolutionMicroseconds),
+          reason: '$utc -> ${julianDay(utc)} -> $round',
+        );
       }
     });
 
@@ -110,14 +128,19 @@ void main() {
       var worst = 0;
       for (var i = 0; i < 2000; i++) {
         final utc = DateTime.fromMillisecondsSinceEpoch(
-            start + (span * i ~/ 2000),
-            isUtc: true);
-        final diff =
-            dateTimeFromJulianDay(julianDay(utc)).difference(utc).inMicroseconds.abs();
+          start + (span * i ~/ 2000),
+          isUtc: true,
+        );
+        final diff = dateTimeFromJulianDay(
+          julianDay(utc),
+        ).difference(utc).inMicroseconds.abs();
         if (diff > worst) worst = diff;
       }
-      expect(worst, lessThanOrEqualTo(julianDayResolutionMicroseconds),
-          reason: 'en kotu sapma $worst us');
+      expect(
+        worst,
+        lessThanOrEqualTo(julianDayResolutionMicroseconds),
+        reason: 'en kotu sapma $worst us',
+      );
     });
   });
 
@@ -140,7 +163,10 @@ void main() {
     });
 
     test('bir Julian yuzyili sonra tam 1.0', () {
-      expect(julianCenturies(j2000 + daysPerJulianCentury), closeTo(1.0, 1e-12));
+      expect(
+        julianCenturies(j2000 + daysPerJulianCentury),
+        closeTo(1.0, 1e-12),
+      );
     });
 
     test('J2000 oncesi negatif', () {

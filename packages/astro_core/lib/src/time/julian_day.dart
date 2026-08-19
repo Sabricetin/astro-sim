@@ -44,10 +44,12 @@ double julianDay(DateTime utc) {
 
   // Gun icindeki kesir. Mikrosaniyeye kadar korunur: 1 us ~ 1.2e-11 gun,
   // yani JD'nin kayan nokta hassasiyetinin altinda kalir.
-  final dayFraction = (utc.hour +
+  final dayFraction =
+      (utc.hour +
           (utc.minute +
                   (utc.second +
-                          (utc.millisecond + utc.microsecond / 1000.0) / 1000.0) /
+                          (utc.millisecond + utc.microsecond / 1000.0) /
+                              1000.0) /
                       60.0) /
               60.0) /
       24.0;
@@ -77,7 +79,8 @@ double julianDayFromCalendar(int year, int month, double day) {
   }
 
   // Once takvim ayrimi olmadan hesapla, sonra Gregoryen duzeltmesini ekle.
-  final jdJulian = (365.25 * (year + 4716)).floor() +
+  final jdJulian =
+      (365.25 * (year + 4716)).floor() +
       (30.6001 * (month + 1)).floor() +
       day -
       1524.5;
@@ -130,10 +133,14 @@ DateTime dateTimeFromJulianDay(double jd) {
   final month = e < 14 ? e - 1 : e - 13;
   final year = month > 2 ? c - 4716 : c - 4715;
 
-  final microsOfDay =
-      ((dayWithFraction - day) * Duration.microsecondsPerDay).round();
+  final microsOfDay = ((dayWithFraction - day) * Duration.microsecondsPerDay)
+      .round();
 
-  return DateTime.utc(year, month, day).add(Duration(microseconds: microsOfDay));
+  return DateTime.utc(
+    year,
+    month,
+    day,
+  ).add(Duration(microseconds: microsOfDay));
 }
 
 /// J2000.0'dan itibaren gecen Julian yuzyili sayisi.

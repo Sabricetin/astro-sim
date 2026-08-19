@@ -1,0 +1,24 @@
+# Dart standart lint kurallari + bu proje icin ek siki kurallar.
+include: package:lints/recommended.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # Bu paketin sozlesmesi: acilar derece, boylam dogu pozitif, zaman UTC.
+    # Sozlesmenin kodda gorunur kalmasi icin public API'de tip zorunlu.
+    - always_declare_return_types
+    - prefer_final_locals
+    # Yol haritasi alistirma #2: sihirli sayi yasak. Lint bunu tam
+    # zorlayamaz ama en azindan isimsiz sabitleri azaltir.
+    - prefer_const_declarations
+    - unnecessary_lambdas
+
+    # BILEREK KAPALI: avoid_redundant_argument_values
+    # DateTime.utc(1999, 1, 1) yerine DateTime.utc(1999) yazdiriyor ve
+    # testlerde acikca yazilan parametreyi (formatHms(x, decimals: 1))
+    # gereksiz sayiyor. Ikisi de okunabilirligi dusurur; test kodunda
+    # parametreyi acikca yazmak belgelemedir.
