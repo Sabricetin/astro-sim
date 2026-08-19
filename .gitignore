@@ -32,3 +32,7 @@ data/**/*.orf
 data/**/*.rw2
 data/**/*.dng
 data/**/*.pef
+
+# Ham katalog indirmeleri — uretilen binary repoda, kaynak degil.
+data/catalog/bsc5
+data/catalog/bsc5.gz

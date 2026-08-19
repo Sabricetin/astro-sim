@@ -12,10 +12,12 @@
 ///  - Zaman her yerde **UTC**; yerel saat sadece arayuzde.
 library;
 
+export 'src/catalog/star_catalog.dart';
 export 'src/coords/horizontal.dart';
 export 'src/coords/precession.dart';
 export 'src/coords/refraction.dart';
 export 'src/coords/types.dart';
 export 'src/math/angles.dart';
+export 'src/optics/gnomonic.dart';
 export 'src/time/julian_day.dart';
 export 'src/time/sidereal_time.dart';
