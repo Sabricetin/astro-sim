@@ -113,6 +113,9 @@ python3 -m venv .venv
 
 Kendi gövdeni ölçmek istersen: [`docs/faz0-cekim-talimati.md`](docs/faz0-cekim-talimati.md)
 
+Sahada yapılacak ölçümler (doğrusallık merdiveni ve kontrollü gökyüzü
+çekimi): [`docs/saha-talimati.md`](docs/saha-talimati.md)
+
 ## Kararlar
 
 Baştan verilip geri dönülmeyen kararlar ve gerekçeleri yol haritasında. Özet:

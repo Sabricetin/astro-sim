@@ -1,6 +1,9 @@
 # Uygulama test planı — Faz 2, 3 ve 4
 
 Bu belge, kodda test edilemeyen şeyler içindir: **ekranda doğru görünüyor mu.**
+
+Sahada yapılacak *fiziksel* ölçümler ayrı bir belgede:
+[`docs/saha-talimati.md`](saha-talimati.md) — özeti aşağıda D bölümünde.
 Otomatik testler matematiğin doğruluğunu kanıtlıyor (317 test); buradaki
 maddeler o matematiğin doğru bağlandığını ve arayüzün anlaşılır olduğunu
 kontrol eder.
@@ -190,6 +193,56 @@ temeli.
 seçince uygulama çökmüyor, grafik yeniden çiziliyor.
 **Not:** Burada gerçek bir hata vardı ve düzeltildi — bütün satırlar aynı
 değeri taşıdığı için seçim yapınca uygulama çöküyordu.
+
+## D. Sahada yapılacak fiziksel testler
+
+Bu bölüm ekranda değil, **dışarıda** yapılır. Ayrıntılı talimat:
+[`docs/saha-talimati.md`](saha-talimati.md). Aşağısı sadece "ne var, ne
+bekliyor" özeti.
+
+### D1 — Doğrusallık merdiveni (0.A.6) · iç mekân, ~30 dk · ⏸ bekliyor
+**Yap:** Kararlı ışık kaynağı (tercihen akkor ampul), ISO 1600 sabit,
+poz 1/60 s'den 2 s'ye ikişer katlanarak, her basamakta 2 kare.
+**Bekle:** Sinyal poz süresiyle doğru orantılı artıyor; aynı basamağın
+iki karesi %1 içinde uyuşuyor.
+**Neden tekrar:** İlk denemede ışık kararsızdı, araç bunu yakaladı.
+Kazanç ölçümü etkilenmedi ama doğrusallık testi bozuldu.
+**Engeli yok — bugün yapılabilir.**
+
+### D2 — Kontrollü gökyüzü çekimi (0.B) · saha, bir gece ~4 saat · ⏸ açık gece bekliyor
+**Ne zaman:** 8–13 Eylül 2026 (10 Eylül yeni ay) veya yedek olarak
+7–13 Ekim. Karanlık pencere 10 Eylül'de 20:14–04:40 yerel.
+
+**Üç dizi:**
+
+| Dizi | Hedef | Ayar | Kare |
+|---|---|---|---|
+| **A** Fon | Pegasus karesi (00:30'da 77°, az 200°) | ISO 1600 poz merdiveni + 15 s ISO merdiveni | 27 |
+| **B** Sönüm | Vega, 70°'den 20°'ye | ISO 1600, 15 s sabit, 7 durak | 35 |
+| **C** Karanlık | Kapak takılı, gecenin sonunda | Kullanılan her kombinasyon | 24 |
+
+**Bekle:** A'da fon poz süresiyle orantılı; üç ISO'nun elektron cinsinden
+fon değeri aynı. B'de Vega 1.06'dan 2.91 hava kütlesine inerken ~0.46
+kadir sönüyor.
+
+**En kritik ayar:** *Uzun Poz Parazit Azaltma KAPALI.* Açık kalırsa makine
+kendi karanlık karesini çıkarır ve C dizisi anlamsızlaşır.
+
+**Zorunlu kayıt:** GPS koordinatı, ondalık derece, 5 hane. D3 onsuz
+yapılamaz.
+
+### D3 — VIIRS fon parlaklığı (0.C) · masa başı · ⏸ D2'nin koordinatını bekliyor
+**Kim yapar:** Ben. Senden sadece koordinat lazım.
+**Bekle:** O noktanın uydu ölçümlü fon parlaklığı, mag/arcsec².
+
+### D4 — Hesap-gerçek karşılaştırması (0.D) · masa başı · ⏸ D2 + D3
+**Bekle:** Hesabın dediği fon ile sensörün gördüğü fon **%15 içinde**,
+ve hata yükseklik boyunca sistematik eğilim göstermiyor.
+**Neden ikincisi daha zor ve daha değerli:** Asıl hedefin 24°'de duruyor.
+Sadece zenit yakınında kalibre edip düşük yüksekliğe güvenilmez.
+
+**Faz 5'in kalibrasyonu tam olarak bu adımdan çıkıyor.** D2 gelene kadar
+radyometri iskeleti sayı üretmeyi reddedecek.
 
 ## Notlar
 
