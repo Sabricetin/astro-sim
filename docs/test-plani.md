@@ -139,8 +139,8 @@ pencere aynı penceredir.
 
 ### C4 — Galaktik merkez 24°'yi geçmiyor
 **Yap:** Tarih **15 Temmuz 2026**, hedef **Galaktik merkez**.
-**Bekle:** Mavi eğrinin tepesi **23.9°** — yeşil 20° çizgisinin hemen
-üstünde, ucu ucuna.
+**Bekle:** Mavi eğrinin tepesi **24.2°** — yeşil 20° çizgisinin hemen
+üstünde, ucu ucuna. (Gaziantep'i seçersen 23.9°.)
 **Neden önemli:** Projenin temel kısıtı bu. "Bu bir düşük yükseklik
 projesi" iddiasının ekrandaki kanıtı.
 
@@ -173,14 +173,14 @@ hiçbir parçası yok.
 
 ### C7 — Yüksek hedef, uzun pencere
 **Yap:** Aynı gece (15 Temmuz), hedefi **M13** yap (Herkül Küresel Kümesi).
-**Bekle:** Eğri neredeyse **başucuna** çıkıyor (~89°), pencere ~356 dk.
-Galaktik merkezin 23.9°'sine göre dramatik fark.
-**Neden:** M13'ün sapması +36.5°, Gaziantep'in enlemi 37.1° — neredeyse tam
+**Bekle:** Eğri neredeyse **başucuna** çıkıyor (~89.7°), pencere ~358 dk.
+Galaktik merkezin 24.2°'sine göre dramatik fark.
+**Neden:** M13'ün sapması +36.5°, Mersin'in enlemi 36.8° — neredeyse tam
 tepeden geçiyor. Aynı gece, aynı yer, tamamen farklı sonuç.
 
 ### C8 — Ulaşılamaz hedef
 **Yap:** Aynı gece, hedefi **M7** yap (en güneydeki Messier nesnesi).
-**Bekle:** Eğrinin tepesi **18.1°** — yeşil 20° çizgisinin **altında**
+**Bekle:** Eğrinin tepesi **18.4°** — yeşil 20° çizgisinin **altında**
 kalıyor. Yeşil bant hiç yok. Panel "eşik yüksekliğinin üzerine çıkmıyor"
 diyor.
 **Neden önemli:** M7 doğuyor ama kullanılabilir değil. Doğmak görünür
@@ -193,6 +193,27 @@ temeli.
 seçince uygulama çökmüyor, grafik yeniden çiziliyor.
 **Not:** Burada gerçek bir hata vardı ve düzeltildi — bütün satırlar aynı
 değeri taşıdığı için seçim yapınca uygulama çöküyordu.
+
+### C10 — Konum gökyüzünü değiştiriyor
+**Yap:** Hedef **Galaktik merkez**, tarih 15 Temmuz. Konum listesinden
+(pin simgesi) sırayla **Mersin** → **Erzurum** → **İstanbul** seç.
+**Bekle:** Zirve yüksekliği kuzeye çıktıkça düşüyor:
+
+| Konum | Enlem | GM zirvesi |
+|---|---|---|
+| Mersin | 36.8° | 24.2° |
+| Gaziantep | 37.1° | 23.9° |
+| Erzurum | 39.9° | 21.1° |
+| İstanbul | 41.0° | 20.0° — **pencere YOK** |
+
+Pencere süresi de kısalıyor: 165 dk → 161 → 98 → yok.
+
+**Neden önemli:** Galaktik merkez güneyde; kuzeye gittikçe alçalır.
+İstanbul'da tam eşiğe değiyor ve pencere kapanıyor — araç "bu hedef bu
+konumdan çekilmez" diyebilmeli. Sabit konumlu bir araç bunu asla
+söyleyemezdi.
+**Not:** Simgenin üzerine gelince seçili konumun koordinatı ve rakımı
+görünüyor — 0.C'deki VIIRS sorgusu bu biçimi istiyor.
 
 ## D. Sahada yapılacak fiziksel testler
 
@@ -248,7 +269,8 @@ radyometri iskeleti sayı üretmeyi reddedecek.
 
 - Tüm saatler ekranda **yerel** (UTC+3), hesapta UTC. Yol haritası kuralı:
   "yerel saat sadece ekranda".
-- Konum şu an **Gaziantep'e sabit**. Konum seçimi Faz 7'de gelecek.
+- Konum artık **seçilebilir** (varsayılan Mersin). Tam konum desteği —
+  harita, ufuk profili, VIIRS bağlantısı — Faz 7'de gelecek.
 - Kırılma (refraksiyon) haritada uygulanmıyor; Faz 7'de ufuk profiliyle
   birlikte gelecek. 24°'de etkisi 2.25 yay dakikası — bu görüntüde fark
   edilmez.

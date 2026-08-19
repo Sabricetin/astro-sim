@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:astro_core/astro_core.dart';
+import 'package:astro_sim/src/site.dart';
 import 'package:astro_sim/src/sky_model.dart';
 import 'package:astro_sim/src/camera_settings.dart';
 import 'package:astro_sim/src/night_panel.dart';
@@ -347,6 +348,77 @@ void main() {
         }
       }
       expect(conflicts, isEmpty, reason: conflicts.take(5).join('\n'));
+    });
+  });
+
+  group('Konum secimi', () {
+    test('hazir konumlarin adi benzersiz', () {
+      // Acilir liste degeri ada gore; tekrar eden ad Messier'daki
+      // cokmenin aynisini uretirdi.
+      final names = sites.map((s) => s.name).toList();
+      expect(names.toSet().length, names.length);
+    });
+
+    test('koordinat metni VIIRS bicimi — ondalik derece, 5 hane', () {
+      expect(
+        RegExp(
+          r'^-?\d+\.\d{5}, -?\d+\.\d{5}$',
+        ).hasMatch(sites.first.coordinateText),
+        isTrue,
+        reason: sites.first.coordinateText,
+      );
+    });
+
+    test('enlemler ve boylamlar gecerli aralikta', () {
+      for (final s in sites) {
+        expect(s.latitudeDegrees, inInclusiveRange(-90, 90), reason: s.name);
+        expect(
+          s.longitudeEastDegrees,
+          inInclusiveRange(-180, 180),
+          reason: s.name,
+        );
+        expect(s.elevationMeters, greaterThanOrEqualTo(-500), reason: s.name);
+      }
+    });
+
+    test('kuzeye gidildikce galaktik merkez alcaliyor', () {
+      // Konum gercekten hesaba giriyor mu? Girmiyorsa hepsi ayni cikardi.
+      final gc = Equatorial.fromHours(
+        rightAscensionHours: 17 + 45 / 60 + 40.0 / 3600,
+        declinationDegrees: -(29 + 28.0 / 3600),
+      );
+      double peak(Site site) {
+        final plan = planNight(
+          target: gc,
+          observer: site.observer,
+          aroundUtc: DateTime.utc(2026, 7, 15, 22),
+        );
+        return plan.samples
+            .map((s) => s.targetAltitudeDegrees)
+            .reduce((a, b) => a > b ? a : b);
+      }
+
+      final mersin = sites.firstWhere((s) => s.name.startsWith('Mersin'));
+      final istanbul = sites.firstWhere((s) => s.name == 'Istanbul');
+      expect(peak(mersin), closeTo(24.2, 0.15));
+      expect(peak(istanbul), closeTo(20.0, 0.15));
+      // Guneydeki hedef kuzeye gidildikce alcalmali.
+      expect(peak(mersin), greaterThan(peak(istanbul)));
+    });
+
+    test('Istanbul\'dan galaktik merkez icin pencere yok', () {
+      // Esik 20 derece; Istanbul'da zirve tam 20.0 — pencere kapanir.
+      // Sabit konumlu bir arac bu cevabi hic veremezdi.
+      final gc = Equatorial.fromHours(
+        rightAscensionHours: 17 + 45 / 60 + 40.0 / 3600,
+        declinationDegrees: -(29 + 28.0 / 3600),
+      );
+      final plan = planNight(
+        target: gc,
+        observer: sites.firstWhere((s) => s.name == 'Istanbul').observer,
+        aroundUtc: DateTime.utc(2026, 7, 15, 22),
+      );
+      expect(plan.best, isNull);
     });
   });
 }

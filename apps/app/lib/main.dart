@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'src/camera_panel.dart';
 import 'src/night_panel.dart';
 import 'src/camera_settings.dart';
+import 'src/site.dart';
 import 'src/sky_model.dart';
 import 'src/sky_painter.dart';
 
@@ -54,11 +55,10 @@ class SkyScreen extends StatefulWidget {
 }
 
 class _SkyScreenState extends State<SkyScreen> {
-  static final gaziantep = Observer(
-    latitudeDegrees: 37.0662,
-    longitudeEastDegrees: 37.3833,
-    elevationMeters: 850,
-  );
+  /// Secili gozlem yeri. Varsayilan Mersin — arac sabit bir sehre kilitli
+  /// kalirsa baska sehirdeki kullaniciya sessizce yanlis gokyuzu gosterir.
+  Site _site = sites.first;
+  Observer get observer => _site.observer;
 
   StarCatalog? _catalog;
   SkyModel? _sky;
@@ -92,11 +92,28 @@ class _SkyScreenState extends State<SkyScreen> {
   String _targetName = 'Galaktik merkez';
   NightPlan? _plan;
 
-  /// Gaziantep icin kaba yerel saat farki. Gosterim icin; hesap hep UTC.
-  static const _localOffset = Duration(hours: 3);
+  /// Gosterim icin yerel saat farki; hesap hep UTC.
+  Duration get _localOffset => _site.utcOffset;
 
   void _recomputePlan() {
-    _plan = planNight(target: _target, observer: gaziantep, aroundUtc: _utc);
+    _plan = planNight(target: _target, observer: observer, aroundUtc: _utc);
+  }
+
+  /// Konum degisince gokyuzu de plan da bastan hesaplanir. Kisayol yok:
+  /// atTime yalnizca zaman degisimi icin gecerli, gozlemci sabit
+  /// varsayiyor.
+  void _selectSite(Site site) {
+    final catalog = _catalog;
+    if (catalog == null) return;
+    setState(() {
+      _site = site;
+      _sky = SkyModel.compute(
+        catalog: catalog,
+        utc: _utc,
+        observer: site.observer,
+      );
+      _recomputePlan();
+    });
   }
 
   void _selectTarget(Equatorial target, String name) {
@@ -117,10 +134,10 @@ class _SkyScreenState extends State<SkyScreen> {
         azimuthDegrees: _azimuth,
         altitudeDegrees: _altitude,
       ),
-      observer: gaziantep,
+      observer: observer,
       localSiderealTimeDegrees: localMeanSiderealTimeDegrees(
         julianDay(_utc),
-        gaziantep.longitudeEastDegrees,
+        observer.longitudeEastDegrees,
       ),
     ).declinationDegrees;
   }
@@ -143,7 +160,7 @@ class _SkyScreenState extends State<SkyScreen> {
         _sky = SkyModel.compute(
           catalog: catalog,
           utc: _utc,
-          observer: gaziantep,
+          observer: observer,
         );
         _recomputePlan();
       });
@@ -169,7 +186,7 @@ class _SkyScreenState extends State<SkyScreen> {
       _utc = utc;
       _sky = sameDay
           ? sky.atTime(utc)
-          : SkyModel.compute(catalog: catalog, utc: utc, observer: gaziantep);
+          : SkyModel.compute(catalog: catalog, utc: utc, observer: observer);
       if (recomputePlan) _recomputePlan();
     });
   }
@@ -404,6 +421,8 @@ class _SkyScreenState extends State<SkyScreen> {
               if (_showPlan) ...[
                 const SizedBox(width: 12),
                 Expanded(child: _targetSelector()),
+                const SizedBox(width: 12),
+                _siteSelector(),
               ],
             ],
           ),
@@ -517,6 +536,32 @@ class _SkyScreenState extends State<SkyScreen> {
       ],
     );
   }
+
+  /// Konum secimi. Faz 7'ye kadar hazir sehir listesi yeterli.
+  ///
+  /// Koordinat metni de gosteriliyor: 0.C'deki VIIRS sorgusu ondalik
+  /// derece istiyor ve kullanicinin sahada hangi noktayi kullandigini
+  /// bilmesi gerekiyor.
+  Widget _siteSelector() => Tooltip(
+    message:
+        'Konum: ${_site.coordinateText}  ·  ${_site.elevationMeters.toStringAsFixed(0)} m',
+    child: DropdownButton<String>(
+      value: _site.name,
+      isDense: true,
+      underline: const SizedBox.shrink(),
+      style: const TextStyle(fontSize: 13, color: Color(0xFFDDE8F2)),
+      dropdownColor: const Color(0xFF10171F),
+      icon: const Icon(Icons.place_outlined, size: 16),
+      items: [
+        for (final site in sites)
+          DropdownMenuItem(value: site.name, child: Text(site.name)),
+      ],
+      onChanged: (name) {
+        if (name == null) return;
+        _selectSite(sites.firstWhere((s) => s.name == name));
+      },
+    ),
+  );
 
   /// Hedef secimi: galaktik merkez + Messier katalogu.
   Widget _targetSelector() => DropdownButton<String>(

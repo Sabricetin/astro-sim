@@ -123,6 +123,8 @@ Baştan verilip geri dönülmeyen kararlar ve gerekçeleri yol haritasında. Öz
 - **Dart / Flutter** — web + iOS + Android tek kod tabanı
 - **Yale Bright Star (BSC5)** yıldız kataloğu — HYG'nin CC BY-SA share-alike yükü olmadan aynı kapsam
 - **Her şey içeride UTC** — yerel saat sadece ekranda
+- **Konum sabit değil** — sabit bir şehre kilitli araç, başka şehirdeki
+  kullanıcıya sessizce yanlış gökyüzü gösterir
 - **Sihirli sayı yasak** — her sabitin yanında birimi ve kaynağı
 - **Gnomonik projeksiyon** — normal lensin gerçek davranışı bu
 - **NPF kuralı**, 500 kuralı değil — 500 piksel yoğunluğunu yok sayar
