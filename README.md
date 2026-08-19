@@ -32,9 +32,12 @@ Bu yüzden proje, arayüz yazmadan önce **sensörü ölçmekle** başladı.
 | 2 | Gökyüzü haritası | ✅ Bitti |
 | 3 | Kamera ve kadraj | ✅ Bitti |
 | 4 | Zaman ve gökyüzü olayları | ✅ Bitti |
-| 5–9 | Radyometri, Samanyolu, ufuk, ürünleşme | ⬜ |
+| 5 | Radyometri — iskelet | 🔨 Sırada |
+| 5 | Radyometri — kalibrasyon | ⏸ 0.B/0.C/0.D bekliyor |
+| 6–9 | Samanyolu, ufuk, ürünleşme | ⬜ |
 
-Ayrıntılı plan: [`yol-haritasi.md`](yol-haritasi.md)
+Ayrıntılı plan: [`yol-haritasi.md`](yol-haritasi.md) ·
+Faz kapanışları ve kanıtları: [`docs/ilerleme.md`](docs/ilerleme.md)
 
 ### Faz 1 — doğrulama matrisi
 
@@ -56,6 +59,12 @@ Araç artık şu cümleyi kuruyor:
 
 Ay'ın fon parlaklığına katkısı Krisciunas & Schaefer (1991) modeliyle
 hesaplanıyor; Faz 5 radyometrisinin doğrudan girdisi.
+
+Kapanış, [`docs/test-plani.md`](docs/test-plani.md) üzerinden el ile
+doğrulandı — ve o el ile geçiş, 308 otomatik testin göremediği iki hata
+buldu. İkisi de hesapla arayüz arasındaki bağ katmanındaydı; hesabın
+kendisi doğruydu. **Otomatik testler hesabın doğruluğunu kanıtlıyor,
+doğru bağlandığını kanıtlamıyor.**
 
 ### Ölçülmüş sensör verisi — Canon EOS 760D
 
@@ -114,6 +123,9 @@ Baştan verilip geri dönülmeyen kararlar ve gerekçeleri yol haritasında. Öz
 - **Sihirli sayı yasak** — her sabitin yanında birimi ve kaynağı
 - **Gnomonik projeksiyon** — normal lensin gerçek davranışı bu
 - **NPF kuralı**, 500 kuralı değil — 500 piksel yoğunluğunu yok sayar
+- **Kalibre edilmemiş büyüklük hesap yapmayı reddeder** — varsayılan
+  değer taşımaz. Uydurmanın maliyeti yanlış sonuç değil, yanlış olduğunu
+  bilememek
 
 ## Lisans
 
