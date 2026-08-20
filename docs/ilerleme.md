@@ -121,6 +121,56 @@ doğrulandı** — düzeltme olmadan düşüyorlar.
 
 ---
 
+## Faz 5 — Radyometri iskeleti 🔨 (20 Ağustos 2026'da başladı)
+
+Zincirin altı halkası kuruldu. **İkisi hesaplanıyor, dördü ölçüm
+bekliyor** — ve bekleyenler varsayılan taşımak yerine hesap yapmayı
+reddediyor.
+
+| Halka | Durum | Kaynak |
+|---|---|---|
+| Kadir → foton akışı | ✅ hesaplanıyor | Bessell (1979) V bandı sıfır noktası |
+| Hava kütlesi | ✅ hesaplanıyor | Kasten & Young (1989) |
+| Açıklık geometrisi | ✅ hesaplanıyor | D = f/N |
+| Gürültü toplamı | ✅ formül hazır | shot + okuma² + karanlık |
+| Sönüm katsayısı **k** | ⏸ ölçüm bekliyor | 0.B Dizi B |
+| Aktarım verimi **T** | ⏸ | 0.D |
+| Kuantum verimi **QE** | ⏸ | 0.D |
+| Bant düzeltmesi **dV_G** | ⏸ | 0.B Dizi A/B |
+| Karanlık akım **I_d** | ⏸ | 0.B Dizi C |
+| Fon parlaklığı **μ_sky** | ⏸ | 0.C VIIRS |
+
+Ölçülmüş olan tek şey sensör: kazanç, okuma gürültüsü ve dolum
+kapasitesi Faz 0.A'dan geliyor, **±%17 belirsizliğiyle birlikte
+taşınıyor.**
+
+### Reddetme mekanizması
+
+`Radiometric` sealed bir tip: ya sayı taşır ya da eksik büyüklüklerin
+listesini. Üçüncü ihtimal yok. Eksikler zincir boyunca **birikerek**
+gidiyor — bugün tam zincir çağrıldığında dördünü birden söylüyor,
+ilkinde durup diğerlerini gizlemiyor.
+
+Her eksik büyüklüğün yanında **neden uydurulamayacağı** yazılı. Örnek
+(sönüm katsayısı): *yere ve geceye göre 0.15 ile 0.60 arasında değişir;
+kitabi 0.25'i Mersin sahilinde kullanmak X=2.4'te 0.84 kadir hata verir
+— akışta 2.2 kat. Asıl hedef 24°'de, yani tam da bu hatanın en büyüdüğü
+yerde.*
+
+### Korumanın gerçekten çalıştığı doğrulandı
+
+`extinction.dart`'a "geçici, sonra ölçümle değiştiririz" tarzı klasik
+bir varsayılan sızdırıldı:
+
+- `dart analyze` → **temiz geçti.** Derleyici bunu yakalamıyor.
+- `dart test` → **3 test düştü.**
+
+Aradaki fark önemli: bu kuralı ancak testler koruyabilir. Kod
+incelemesinde gözden kaçabilecek tek satırlık bir kısayol, test
+katmanında sesli bir hataya dönüşüyor.
+
+---
+
 ## Sıradaki
 
 | Faz | Durum | Engel |

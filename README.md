@@ -32,7 +32,7 @@ Bu yüzden proje, arayüz yazmadan önce **sensörü ölçmekle** başladı.
 | 2 | Gökyüzü haritası | ✅ Bitti |
 | 3 | Kamera ve kadraj | ✅ Bitti |
 | 4 | Zaman ve gökyüzü olayları | ✅ Bitti |
-| 5 | Radyometri — iskelet | 🔨 Sırada |
+| 5 | Radyometri — iskelet | 🔨 Başladı |
 | 5 | Radyometri — kalibrasyon | ⏸ 0.B/0.C/0.D bekliyor |
 | 6–9 | Samanyolu, ufuk, ürünleşme | ⬜ |
 
@@ -65,6 +65,20 @@ doğrulandı — ve o el ile geçiş, 308 otomatik testin göremediği iki hata
 buldu. İkisi de hesapla arayüz arasındaki bağ katmanındaydı; hesabın
 kendisi doğruydu. **Otomatik testler hesabın doğruluğunu kanıtlıyor,
 doğru bağlandığını kanıtlamıyor.**
+
+### Faz 5 — kalibrasyonsuz hesap yapmayı reddeden zincir
+
+Işık zincirinin altı halkası kuruldu: ikisi hesaplanıyor, dördü ölçüm
+bekliyor. Bekleyenler varsayılan değer **taşımıyor** — çağrıldıklarında
+hangi büyüklüğün eksik olduğunu ve neden uydurulamayacağını söylüyorlar.
+
+```
+starElectronRate(...)  →  hesaplanamadi — eksik: dV_G, k, T, QE
+```
+
+Bu kuralın gerçekten korunduğu, `extinction.dart`'a geçici bir
+varsayılan sızdırılarak doğrulandı: `dart analyze` temiz geçti,
+3 test düştü. Derleyicinin göremediği şeyi testler görüyor.
 
 ### Ölçülmüş sensör verisi — Canon EOS 760D
 
