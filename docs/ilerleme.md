@@ -157,6 +157,54 @@ kitabi 0.25'i Mersin sahilinde kullanmak X=2.4'te 0.84 kadir hata verir
 — akışta 2.2 kat. Asıl hedef 24°'de, yani tam da bu hatanın en büyüdüğü
 yerde.*
 
+### İskeletin tamamı (20 Ağustos 2026)
+
+Zincirin geri kalanı da yazıldı: gökyüzü fonu (5.6), PSF ve ayak izi
+(5.11), nokta kaynak / difüz SNR (5.10), histogram ve kırpma (5.12),
+ve hepsini birleştiren `ExposureReport`.
+
+Rapor bugün şunu üretiyor:
+
+```
+Galaktik merkez: 24 derece yukseklik, hava kutlesi 2.45
+Olcek 54.8"/px, yildiz izi 3.6 px (NPF siniri 17.1 s)
+--- eksik ---
+k olculmedi      — Faz 0.B Dizi B
+mu_sky olculmedi — Faz 0.C VIIRS
+... (7 madde, her biri kaynağıyla)
+```
+
+Kalibrasyon dolduğunda aynı çağrı şuna dönüşüyor:
+
+```
+Sonum 0.61 kadir
+SNR 16.3
+Fon histogramin %13'ini dolduruyor
+Parlak yildizlarda kirpma yok
+```
+
+**Doğrulama:** Zincirin çıktısı ayrıca elle hesaplandı ve kod birebir
+aynı sonucu verdi — yıldız 24.2 e⁻/s, fon 0.851 e⁻/px/s, iz 3.60 px,
+SNR 16.3, histogram %13. Bu değerler teste sabitlendi; zincirde sessiz
+bir kayma olursa oradan yakalanır.
+
+### İskeletin ortaya çıkardığı iki gerçek
+
+**1. Sönüm gökyüzü fonuna uygulanmaz.** Yıldız ışığı atmosferden geçerek
+gelir ve söner; gökyüzü fonu atmosferin ve şehrin *kendi* ürettiği
+ışıktır, zaten yerde ölçülür. İkisine aynı düzeltmeyi uygulamak sık
+yapılan ve sessizce yanıltan bir hata.
+
+**2. Geniş açıda PSF'yi atmosfer belirlemiyor.** 14 mm ve 3.72 µm piksel
+için ölçek 54.8″/px; tipik 2″ seeing bunun yanında görünmez. Sistem
+aşırı az örneklenmiş — bu bir kusur değil, rejimin özelliği. Araç bunu
+kusur gibi raporlamamalı.
+
+Ayrıca poz süresinin SNR'ı her zaman iyileştirmediği nokta zincire
+bağlandı: uzun poz daha çok foton toplar ama izi de uzatır, yani sinyali
+daha çok piksele yayar ve her piksel kendi fon gürültüsünü getirir.
+Faz 3'ün iz hesabı buraya doğrudan giriyor.
+
 ### Korumanın gerçekten çalıştığı doğrulandı
 
 `extinction.dart`'a "geçici, sonra ölçümle değiştiririz" tarzı klasik
