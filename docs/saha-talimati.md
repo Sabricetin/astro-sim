@@ -25,22 +25,32 @@ testi bozuldu.**
 Doğrusallık şu soruyu cevaplıyor: sensör iki kat ışığa iki kat sayı ile mi
 cevap veriyor? Cevap "hayır" ise foton hesabının tamamı yamuk oturur.
 
-## Tuzak: ışık kaynağı
+## Işık kaynağı — iki denemeyi de bu bozdu
 
-**Kullanma:**
-- LED ampul (çoğu PWM ile kısılır — gözün görmediği hızda yanıp söner)
-- Telefon/tablet ekranı (yenileme frekansı + parlaklık otomatiği)
-- Floresan (50 Hz şebekeyle titrer)
-- Pencereden gelen gündüz ışığı (bulut geçer)
+**Gece, kapalı odada, tavan LED ampulü.** Gündüz ışığı bu iş için
+uygun değil: 2. denemede ışık dakikada %3.9 düştü ve üstüne %2
+düzensiz oynadı. Sensörün aranan doğrusalsızlığı (<%1) bunun altında
+kaldı — ölçüm, ölçmeye çalıştığı şeyden gürültülüydü.
 
-**Kullan:**
-- **Eski tip akkor (filamanlı) ampul** — termal atalet titremeyi siler.
-  Elinde varsa en iyisi bu.
-- Yoksa: LED paneli **beyaz bir kâğıda vurdurup** kâğıdın yansımasını
-  çek, ve pozları **1/60 s'den uzun** tut. Uzun poz PWM titremesini
-  ortalar.
-- Işığı doğrudan lense tutma; hep bir difüzörden (beyaz kâğıt, beyaz
-  tişört, buzlu cam) geçir.
+### "LED kullanma" uyarısı bu merdivende geçersiz
+
+İlk talimatta LED'i yasaklamıştım. O uyarı merdiven 1/60 s ile
+başlarken doğruydu. Yeni merdivende en kısa poz **0.4 s** ve şebeke
+dalgalanması 100 Hz: 0.4 s = 40 çevrim, 0.5 = 50, 0.8 = 80, 1.3 = 130,
+1.6 = 160, 2 = 200, 2.5 = 250, 3.2 = 320. **Hepsi tam sayı çevrim**,
+dalgalanma tam olarak ortalanıyor.
+
+### Şartlar
+
+- **Dimmer'a dokunma, kısılabilir ampul kullanma.** PWM asıl orada.
+- **Ampulü 10 dakika önce yak.** LED ısındıkça ışığı %5–10 düşer,
+  sonra sabitlenir. Sıcak halde çek.
+- **Perdeleri kapat.** Sızan gün ışığı bütün işi bozar.
+- Işığı beyaz kâğıda vurdur, kâğıdın yansımasını çek — doğrudan lense
+  tutma.
+
+Akkor (filamanlı) ampul varsa o da olur ve daha da iyidir; termal
+ataleti dalgalanmayı tamamen siler.
 
 ## Ayarlar
 
