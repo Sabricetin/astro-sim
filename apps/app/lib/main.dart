@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'src/camera_panel.dart';
 import 'src/night_panel.dart';
+import 'src/report_panel.dart';
 import 'src/camera_settings.dart';
 import 'src/site.dart';
 import 'src/sky_model.dart';
@@ -47,6 +48,9 @@ final presets = <ViewPreset>[
   ViewPreset('Genis aci (14 mm)', DateTime.utc(2026, 3, 15, 21), 180, 45, 104),
 ];
 
+/// Alt paneldeki sekmeler.
+enum _Tab { camera, plan, report }
+
 class SkyScreen extends StatefulWidget {
   const SkyScreen({super.key});
 
@@ -80,7 +84,7 @@ class _SkyScreenState extends State<SkyScreen> {
   );
 
   /// Alt panelde kamera mi plan mi gorunuyor.
-  bool _showPlan = false;
+  _Tab _tab = _Tab.camera;
 
   /// Secili hedef. Galaktik merkez katalogda yok — projenin baslik hedefi
   /// oldugu icin elle ekleniyor.
@@ -90,6 +94,10 @@ class _SkyScreenState extends State<SkyScreen> {
   );
   Equatorial _target = galacticCenter;
   String _targetName = 'Galaktik merkez';
+
+  /// Hedefin V kadiri. Difuz hedeflerde (galaktik merkez) yok — o zaman
+  /// yildiz sinyali hesaplanamaz ve rapor bunu acikca soyler.
+  double? _targetMagnitude;
   NightPlan? _plan;
 
   /// Gosterim icin yerel saat farki; hesap hep UTC.
@@ -116,10 +124,11 @@ class _SkyScreenState extends State<SkyScreen> {
     });
   }
 
-  void _selectTarget(Equatorial target, String name) {
+  void _selectTarget(Equatorial target, String name, {double? magnitude}) {
     setState(() {
       _target = target;
       _targetName = name;
+      _targetMagnitude = magnitude;
       _recomputePlan();
     });
   }
@@ -141,6 +150,16 @@ class _SkyScreenState extends State<SkyScreen> {
       ),
     ).declinationDegrees;
   }
+
+  /// Hedefin su anki yuksekligi. Rapor hava kutlesini bundan hesapliyor.
+  double get _targetAltitude => equatorialToHorizontal(
+    equatorial: _target,
+    observer: observer,
+    localSiderealTimeDegrees: localMeanSiderealTimeDegrees(
+      julianDay(_utc),
+      observer.longitudeEastDegrees,
+    ),
+  ).altitudeDegrees;
 
   double _fovAtGestureStart = 0;
   double _rollAtGestureStart = 0;
@@ -410,15 +429,17 @@ class _SkyScreenState extends State<SkyScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              SegmentedButton<bool>(
+              SegmentedButton<_Tab>(
                 segments: const [
-                  ButtonSegment(value: false, label: Text('Kamera')),
-                  ButtonSegment(value: true, label: Text('Plan')),
+                  ButtonSegment(value: _Tab.camera, label: Text('Kamera')),
+                  ButtonSegment(value: _Tab.plan, label: Text('Plan')),
+                  ButtonSegment(value: _Tab.report, label: Text('Rapor')),
                 ],
-                selected: {_showPlan},
-                onSelectionChanged: (v) => setState(() => _showPlan = v.first),
+                selected: {_tab},
+                showSelectedIcon: false,
+                onSelectionChanged: (v) => setState(() => _tab = v.first),
               ),
-              if (_showPlan) ...[
+              if (_tab != _Tab.camera) ...[
                 const SizedBox(width: 12),
                 Expanded(child: _targetSelector()),
                 const SizedBox(width: 12),
@@ -427,7 +448,19 @@ class _SkyScreenState extends State<SkyScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          if (_showPlan && _plan != null)
+          if (_tab == _Tab.report)
+            ReportPanel(
+              settings: _settings,
+              targetName: _targetName,
+              altitudeDegrees: _targetAltitude,
+              declinationDegrees: _target.declinationDegrees,
+              vMagnitude: _targetMagnitude,
+              // Messier katalogunda B-V yok; yildiz kataloguna baglanmasi
+              // Faz 6'nin isi. Simdilik null, rapor bunu eksik sayiyor.
+              colorIndexBV: null,
+              onChanged: (s) => setState(() => _settings = s),
+            )
+          else if (_tab == _Tab.plan && _plan != null)
             NightPanel(
               plan: _plan!,
               targetName: _targetName,
@@ -598,6 +631,7 @@ class _SkyScreenState extends State<SkyScreen> {
           declinationDegrees: m.declinationDegrees,
         ),
         name,
+        magnitude: m.magnitude,
       );
     },
   );

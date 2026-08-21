@@ -4,6 +4,12 @@ import 'package:astro_core/astro_core.dart';
 ///
 /// Faz 3'un ciktisi: "bu lensle bu kadraj cikar mi" ve "bu pozda yildiz
 /// iz birakir mi" sorularinin cevabi.
+/// Olculmus ISO degerleri.
+///
+/// Faz 0.A yalniz bu ucunu olctu. Listeye ISO 400 eklemek, kazanci
+/// bilinmeyen bir ayari secilebilir yapmak demek olurdu.
+const measuredIsoValues = <int>[800, 1600, 3200];
+
 class CameraSettings {
   final Camera camera;
   final double focalLengthMm;
@@ -17,6 +23,14 @@ class CameraSettings {
   /// sapmasi kullanilir.
   final double targetDeclinationDegrees;
 
+  /// Secili ISO.
+  ///
+  /// Radyometri raporu icin gerekli: kazanc ve okuma gurultusu ISO'ya
+  /// gore degisir ve yalnizca OLCULMUS ISO'lar kullanilabilir. Olculmemis
+  /// bir ISO secilirse rapor sayi uretmeyi reddeder — ara degeri
+  /// interpolasyonla uydurmak tam da yasakladigimiz sey.
+  final int iso;
+
   const CameraSettings({
     required this.camera,
     this.focalLengthMm = 14,
@@ -24,6 +38,7 @@ class CameraSettings {
     this.exposureSeconds = 20,
     this.portrait = false,
     this.targetDeclinationDegrees = 0,
+    this.iso = 1600,
   });
 
   CameraSettings copyWith({
@@ -33,6 +48,7 @@ class CameraSettings {
     double? exposureSeconds,
     bool? portrait,
     double? targetDeclinationDegrees,
+    int? iso,
   }) => CameraSettings(
     camera: camera ?? this.camera,
     focalLengthMm: focalLengthMm ?? this.focalLengthMm,
@@ -41,6 +57,7 @@ class CameraSettings {
     portrait: portrait ?? this.portrait,
     targetDeclinationDegrees:
         targetDeclinationDegrees ?? this.targetDeclinationDegrees,
+    iso: iso ?? this.iso,
   );
 
   FieldOfView get fieldOfView => FieldOfView.of(

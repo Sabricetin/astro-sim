@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:astro_core/astro_core.dart';
+import 'package:astro_sim/src/report_panel.dart';
 import 'package:astro_sim/src/site.dart';
 import 'package:astro_sim/src/sky_model.dart';
 import 'package:astro_sim/src/camera_settings.dart';
@@ -419,6 +420,82 @@ void main() {
         aroundUtc: DateTime.utc(2026, 7, 15, 22),
       );
       expect(plan.best, isNull);
+    });
+  });
+
+  group('Rapor paneli — T5 arayuzu', () {
+    final canon = cameras.firstWhere((c) => c.name == 'Canon EOS 760D');
+
+    Widget panel(CameraSettings settings, {double? mag}) => MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: ReportPanel(
+            settings: settings,
+            targetName: 'Test hedefi',
+            altitudeDegrees: 24,
+            declinationDegrees: -29,
+            vMagnitude: mag,
+            colorIndexBV: null,
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    testWidgets('olculmus ISO icin rapor uretiyor', (tester) async {
+      await tester.pumpWidget(
+        panel(CameraSettings(camera: canon, iso: 1600), mag: 8),
+      );
+      expect(tester.takeException(), isNull);
+      // Geometrik kisim her zaman hesaplanir.
+      expect(find.textContaining('hava kutlesi'), findsOneWidget);
+      expect(find.textContaining('OLCUM BEKLEYEN'), findsOneWidget);
+    });
+
+    testWidgets('olculmemis ISO icin hesap yapmayi reddediyor', (tester) async {
+      // ISO 400 Faz 0.A'da olculmedi. Panel ara deger uretmemeli.
+      await tester.pumpWidget(
+        panel(CameraSettings(camera: canon, iso: 400), mag: 8),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('olculmus sensor verisi yok'), findsOneWidget);
+      expect(find.textContaining('hava kutlesi'), findsNothing);
+    });
+
+    testWidgets('olculmemis GOVDE icin de reddediyor', (tester) async {
+      final sony = cameras.firstWhere((c) => c.name != 'Canon EOS 760D');
+      await tester.pumpWidget(
+        panel(CameraSettings(camera: sony, iso: 1600), mag: 8),
+      );
+      expect(find.textContaining('olculmus sensor verisi yok'), findsOneWidget);
+    });
+
+    testWidgets('difuz hedefte yildiz sinyali hesaplanamadigini soyluyor', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        panel(CameraSettings(camera: canon, iso: 1600), mag: null),
+      );
+      expect(find.textContaining('V kadiri yok'), findsOneWidget);
+    });
+
+    test('yalnizca olculmus ISO\'lar secilebilir', () {
+      expect(measuredIsoValues, [800, 1600, 3200]);
+      for (final iso in measuredIsoValues) {
+        expect(
+          measuredProfileFor(cameraName: 'Canon EOS 760D', iso: iso),
+          isNotNull,
+          reason: 'ISO $iso listede ama olcumu yok',
+        );
+      }
+    });
+
+    test('ISO secimi digerlerini bozmuyor', () {
+      final base = CameraSettings(camera: canon, exposureSeconds: 30);
+      final changed = base.copyWith(iso: 3200);
+      expect(changed.exposureSeconds, 30);
+      expect(changed.iso, 3200);
+      expect(base.iso, 1600, reason: 'varsayilan ISO 1600 olmali');
     });
   });
 }

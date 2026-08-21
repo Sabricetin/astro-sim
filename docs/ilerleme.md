@@ -246,6 +246,22 @@ bağlandı: uzun poz daha çok foton toplar ama izi de uzatır, yani sinyali
 daha çok piksele yayar ve her piksel kendi fon gürültüsünü getirir.
 Faz 3'ün iz hesabı buraya doğrudan giriyor.
 
+### Arayüze bağlandı (22 Ağustos 2026)
+
+Alt panelde üçüncü sekme: **Rapor**. Bugün iki satır hesaplıyor
+(yükseklik + hava kütlesi, ölçek + iz + NPF) ve yedi eksiği
+**kaynağıyla** listeliyor. İlerleme çubuğu `0 / 7 halka` diyor.
+
+Tasarım kararı: eksik kısmı boş bırakmak ya da "0.0" göstermek yerine
+neyin eksik olduğunu ve nereden geleceğini yazmak. Boş alan kullanıcıya
+"araç bozuk" dedirtir; *"k ölçülmedi, 0.B Dizi B'den gelecek"* ise
+durumu doğru anlatır ve ne yapması gerektiğini söyler.
+
+**Reddetme arayüzde de çalışıyor:** ISO listesinde yalnızca ölçülmüş
+üç değer var (800/1600/3200), ve ölçülmemiş bir gövde seçilirse panel
+hiçbir sayı üretmiyor — hava kütlesi satırı bile çıkmıyor. Widget
+testleri bunu doğruluyor.
+
 ### Korumanın gerçekten çalıştığı doğrulandı
 
 `extinction.dart`'a "geçici, sonra ölçümle değiştiririz" tarzı klasik

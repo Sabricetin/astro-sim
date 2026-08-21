@@ -265,6 +265,52 @@ Sadece zenit yakınında kalibre edip düşük yüksekliğe güvenilmez.
 **Faz 5'in kalibrasyonu tam olarak bu adımdan çıkıyor.** D2 gelene kadar
 radyometri iskeleti sayı üretmeyi reddedecek.
 
+## E. Rapor sekmesi (Faz 5 iskeleti)
+
+Alt panelde **Rapor** sekmesi. Bu sekme bugün bilerek yarım — asıl
+değeri, neyin eksik olduğunu dürüstçe söylemesi.
+
+### E1 — Hesaplanan kısım geliyor
+**Yap:** Hedef **Galaktik merkez**, gövde **Canon EOS 760D**, ISO **1600**.
+**Bekle:** İki satır:
+```
+Galaktik merkez: 24 derece yukseklik, hava kutlesi 2.45
+Olcek 54.8"/px, yildiz izi 4.8 px (NPF siniri 17.1 s)
+```
+**Neden sadece iki satır:** Sönüm, SNR ve histogram kalibrasyon bekliyor.
+
+### E2 — Eksikler kaynağıyla listeleniyor
+**Bekle:** **OLCUM BEKLEYEN (7)** başlığı ve yedi satır — her birinde
+sembol, ad ve **hangi çekimden geleceği**. Alttaki çubuk `0 / 7 halka`.
+**Yap:** Bir satırın üstüne gel (fare).
+**Bekle:** O büyüklüğün neden uydurulamayacağı çıkıyor. Örnek (k):
+*"yere ve geceye göre 0.15 ile 0.60 arasında değişir; kitabi 0.25'i
+Mersin sahilinde kullanmak X=2.4'te 0.84 kadir hata verir"*
+
+### E3 — Ölçülmemiş ISO hesabı reddediyor
+**Yap:** ISO düğmelerine bak.
+**Bekle:** Sadece **800 / 1600 / 3200** var. Faz 0.A yalnız bunları ölçtü;
+ISO 400'ü listeye koymak, kazancı bilinmeyen bir ayarı seçilebilir
+yapmak olurdu.
+
+### E4 — Ölçülmemiş gövde de reddediyor
+**Yap:** Gövdeyi **Sony A7 III** yap, Rapor sekmesine bak.
+**Bekle:** Kırmızı 🚫 ve *"olculmus sensor verisi yok"*. Hiçbir sayı
+üretilmiyor — hava kütlesi satırı bile yok.
+**Neden önemli:** Projenin temel kuralının ekrandaki hali. Ara değeri
+interpolasyonla üretmek, ölçülmüş sayılarla uydurma sayıları ayırt
+edilemez hale getirirdi.
+
+### E5 — Difüz hedef dürüstçe işaretleniyor
+**Yap:** Hedef **Galaktik merkez** (kadiri yok) vs **M13** (kadiri var).
+**Bekle:** Galaktik merkezde *"Bu hedefin V kadiri yok (difuz), yildiz
+sinyali hesaplanamaz"* satırı var; M13'te yok.
+
+### E6 — Poz süresi izi değiştiriyor
+**Yap:** Kamera sekmesinde pozu 10 s yap, Rapor'a dön.
+**Bekle:** İz 4.8 px'ten ~2.4 px'e düşüyor. Rapor kamera ayarlarını
+gerçekten izliyor.
+
 ## Notlar
 
 - Tüm saatler ekranda **yerel** (UTC+3), hesapta UTC. Yol haritası kuralı:
