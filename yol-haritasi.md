@@ -63,6 +63,9 @@ astro_sim/
 
 ## Lisans kararları — ticari plan olduğu için ŞİMDİ ver
 
+> **Açık maddeler (ticari dağıtımdan önce kapanmalı):**
+> BSC5 yıldız kataloğu · photonstophotos gövde ölçümleri
+
 Ücretsiz bir hobi projesinde bunlar ertelenebilir. Abonelik satacaksan erteleyemezsin: veri formatını ve loader'ı yazdıktan sonra kaynak değiştirmek, o kodu çöpe atmak demek.
 
 | Varlık | Karar | Not |
@@ -357,6 +360,72 @@ adayları QE, lens verimi, bant düzeltmesi veya kazanç ölçümü.
 Sahada işine yarayan şey bu rapor. Güzel görüntü Faz 6'da gelir.
 
 **Tuzak 3 — Lens aktarım verimi:** f/2.8 bir lens f/2.8 kadar ışık geçirmez. T-stop f-stop'tan tipik %10–20 düşüktür (cam sayısına ve kaplamaya göre). %15 kriterinde bu tek başına seni düşürebilir. Sinema lenslerinde T-stop yayınlanır; fotoğraf lenslerinde genelde yayınlanmaz — 0.95 gibi bir varsayılan kullan ve **kaynağını yorum olarak yaz**.
+
+---
+
+## ÜRÜN KARARI — 22 Ağustos 2026: kalibrasyon kimin işi
+
+Soru: *"Bu ölçümler sadece geliştiricinin makinesine mi özel? Öyleyse
+program başkasına yaramaz."*
+
+Cevap üç parçalı.
+
+### 1. Aracın büyük kısmı kalibrasyon istemiyor
+
+`astro_core`'daki 8 modülden 7'si (zaman, koordinat, katalog, optik,
+kamera geometrisi, efemeris, planlama) **hiçbir ölçüme bağlı değil.**
+Yalnızca `radiometry` bağlı.
+
+Yani Faz 1–4'ün tamamı — kadraj, NPF/iz, gece penceresi, Ay cezası,
+yıldız haritası — **her kullanıcı için bugün çalışıyor.** Bir planlama
+aracının değerinin çoğu zaten burada.
+
+### 2. Ölçülenlerin çoğu kişiye değil, MODELE özel
+
+| Büyüklük | Neye bağlı | Paylaşılabilir mi |
+|---|---|---|
+| kazanç, okuma gürültüsü, dolum | gövde modeli | ✅ bir kez ölçülür, herkes kullanır |
+| **ZP** | gövde modeli (diyafram düzeltilerek) | ✅ aynı şekilde |
+| **FWHM** | lens | ✅ lens başına |
+| **μ_sky** | konum | ⚠️ kullanıcının kendi karesinden, tek kare |
+| **k** | konum **ve o gece** | ❌ gerçekten kişisel |
+
+Bir Canon 760D ölçümü, dünyadaki bütün 760D'ler için geçerli. `k`
+dışında hiçbir şey "her kullanıcı kendi ölçsün" gerektirmiyor.
+
+### 3. Kullanıcı için üç kademe
+
+| Kademe | Kullanıcı ne yapar | Ne kazanır |
+|---|---|---|
+| **1** | Listeden gövdesini seçer | Kadraj, iz, gece planı, Ay — tamamı |
+| **2** | Bilinen bir yıldıza **tek kare** çeker | ZP + μ_sky + FWHM → radyometri kalibre |
+| **3** | Bir gece Dizi A/B/C | `k` de ölçülür, en yüksek doğruluk |
+
+Kademe 2 otuz saniyelik iş, gece gerektirmiyor. Kullanıcıların çoğu
+1 veya 2'de duracak.
+
+### Geliştiricinin kendi ölçümü niye bu kadar ayrıntılı
+
+İki sebep, ikisi de ürünün temeli:
+
+1. **Referans standart.** Fiziğin doğru kurulduğunu bilmek için en az
+   bir sistemi baştan sona ölçmek gerekir. Veritabanından çekilen bir
+   gövde için model güvenilir olacaksa, önce tam ölçülmüş bir sistemde
+   doğrulanmış olmalı.
+2. **İlk veri noktası.** Gövde veritabanı buradan başlıyor.
+
+### Bunun için gereken iki iş (Faz 9'a taşındı)
+
+**Gövde veritabanı.** `photonstophotes.net` yüzlerce gövde için kazanç
+ve okuma gürültüsü ölçmüş. İçeri alınmalı — ve **lisans durumu ticari
+dağıtımdan önce netleşmeli.** BSC5'inkiyle aynı kategoride açık madde.
+
+**Yıldız tanıma.** Kademe 2'nin çalışması için program, kullanıcının
+karesindeki yıldızın hangisi olduğunu bilmeli. Avantaj: araç zaten
+nereye, ne zaman ve nereden bakıldığını biliyor — sıfırdan plate solve
+değil, kısıtlı eşleştirme. Yine de gerçek iş.
+
+**Bu iki iş bitmeden radyometri tek kullanıcılıktır.** Faz 1–4 değil.
 
 ---
 

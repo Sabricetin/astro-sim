@@ -78,6 +78,36 @@ Kendi karendeki yıldız çok daha doğru — üstelik bedava.
 
 O gece çekim yapılınca **6'dan 5'i** kapanıyor.
 
+## "Bu sadece senin makinene mi çalışıyor?"
+
+Hayır. Ve sandığından iyi.
+
+**Programın büyük kısmı hiç kalibrasyon istemiyor.** Kadraj, yıldız izi,
+gece penceresi, Ay hesabı, yıldız haritası — hepsi her kullanıcı için
+bugün çalışıyor. Bir planlama aracının değerinin çoğu zaten burada.
+
+**Ölçülenlerin çoğu kişiye değil, makine MODELİNE özel.** Bir Canon
+760D ölçümü, dünyadaki bütün 760D'ler için geçerli. Kazanç, gürültü,
+çevrim katsayısı — hepsi bir kez ölçülür, herkes kullanır.
+
+Gerçekten kişisel olan tek şey **k** (havanın ışığı yutması), çünkü o
+hem yere hem o geceye bağlı.
+
+**Yeni bir kullanıcı için üç kademe:**
+
+| Kademe | Ne yapar | Ne kazanır |
+|---|---|---|
+| 1 | Listeden makinesini seçer | Kadraj, iz, gece planı — tamamı |
+| 2 | Bilinen bir yıldıza **tek kare** çeker | Işık hesabı da kalibre olur |
+| 3 | Bir gece tam ölçüm | En yüksek doğruluk |
+
+Kademe 2 otuz saniyelik iş. Çoğu kullanıcı 1 veya 2'de durur.
+
+**Peki senin ölçümün niye bu kadar ayrıntılı?** Çünkü fiziğin doğru
+kurulduğunu bilmek için en az bir makineyi baştan sona ölçmek gerekiyor.
+Seninki o makine. Başkasının verisine güvenebilmemiz için önce tam
+ölçülmüş bir sistemde doğrulanmış olması lazım.
+
 ## Bir de şu oldu
 
 Işık hesabı yazılınca ilk işi kendi çekim planımızdaki hatayı bulmak
