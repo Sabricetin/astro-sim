@@ -38,6 +38,7 @@ Cikti: <out>.json  (versiyonlanabilir sonuc)  ve  <out>.png (grafik)
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import json
 import subprocess
 import sys
@@ -82,6 +83,7 @@ class Frame:
     path: Path
     iso: int | None
     exposure: float | None   # saniye
+    taken_at: float | None = None   # unix zaman, kaymayi olcmek icin
 
 
 def raw_files(folder: Path) -> list[Path]:
@@ -92,7 +94,8 @@ def read_metadata(paths: list[Path]) -> list[Frame]:
     """exiftool ile ISO ve pozlama suresini toplu oku."""
     if not paths:
         return []
-    cmd = ["exiftool", "-j", "-n", "-ISO", "-ExposureTime", *[str(p) for p in paths]]
+    cmd = ["exiftool", "-j", "-n", "-ISO", "-ExposureTime", "-ShutterSpeedValue", "-CreateDate",
+           *[str(p) for p in paths]]
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
         meta = {Path(d["SourceFile"]).name: d for d in json.loads(out)}
@@ -104,9 +107,28 @@ def read_metadata(paths: list[Path]) -> list[Frame]:
     for p in paths:
         d = meta.get(p.name, {})
         iso = d.get("ISO")
-        exp = d.get("ExposureTime")
+        # EXIF ExposureTime GOSTERILEN degerdir ve yuvarlanmistir: makine
+        # "0.4 s" yazar ama gercekte 0.3856 s poz verir (1/3 durak serisi
+        # 2^(-4/3)). ShutterSpeedValue APEX'ten turer ve gercege yakindir.
+        #
+        # Fark buyuk: 0.4 ve 0.8 icin -%3.6, 2.5 icin +%3.75. Dogrusallik
+        # testi tam da bu buyuklukteki sapmalari aradigi icin yuvarlanmis
+        # degeri kullanmak testi anlamsiz kiliyordu — 0.A.6'nin ucuncu
+        # denemesinde artik RMS'i %3.02'den %1.88'e dusuren duzeltme bu.
+        #
+        # Kazanc olcumu etkilenmez (kazanc poz suresini bilmeyi
+        # gerektirmez); yalnizca dogrusallik ve sinyal-zaman iliskisi
+        # etkilenir.
+        exp = d.get("ShutterSpeedValue") or d.get("ExposureTime")
+        taken = d.get("CreateDate")
+        ts = None
+        if taken:
+            try:
+                ts = datetime.strptime(taken, "%Y:%m:%d %H:%M:%S").timestamp()
+            except ValueError:
+                ts = None
         frames.append(Frame(p, int(iso) if iso else None,
-                            float(exp) if exp else None))
+                            float(exp) if exp else None, ts))
     return frames
 
 
@@ -198,10 +220,24 @@ def build_ptc(groups: dict, master_bias: np.ndarray, channel: str, roi: int):
 
         signal = float(np.mean(p1 - master_bias))
         variance = float(np.var(p1 - p2) / 2.0)
+        # Tek tek kareler de saklaniyor: dogrusallik icin kaymayi
+        # olcmek gerekiyor ve kayma bilgisi ciftin ICINDEKI farkta.
+        # Cifti tek noktaya indirip ortalama zamani almak, palindromda
+        # tam olarak bu bilgiyi yok eder.
+        per_frame = [
+            {"signal_adu": float(np.mean(pl - master_bias)),
+             "taken_at": f.taken_at}
+            for pl, f in ((p1, frames[0]), (p2, frames[1]))
+        ]
         points.append({
             "iso": frames[0].iso,
             "exposure_s": frames[0].exposure,
+            "taken_at": (
+                sum(f.taken_at for f in frames[:2]) / 2
+                if all(f.taken_at is not None for f in frames[:2]) else None
+            ),
             "signal_adu": signal,
+            "per_frame": per_frame,
             "variance_adu2": variance,
             "n_frames": len(frames),
         })
@@ -253,6 +289,49 @@ def check_linearity(points: list[dict], full_scale: float):
     predicted = k * t
     dev = (s - predicted) / np.maximum(predicted, 1.0) * 100.0
 
+    # Isik kaymasi duzeltmesi.
+    #
+    # Kaynak kararsizsa (pencere isigi, isinan LED) sinyal hem poz
+    # suresine hem SAATE bagli olur. Merdiven palindrom sirada
+    # cekildiyse (cik-in) poz suresi dizinin ortasina gore simetriktir,
+    # yani zamana bagli terim (tek fonksiyon) dogrusalsizliktan (cift
+    # fonksiyon) ayrilabilir.
+    #
+    # Cift ortalamasi degil TEK TEK kareler kullanilir: palindromda her
+    # ciftin iki karesi dizinin iki ucuna duser, kayma bilgisi tam da o
+    # farkta durur. Ortalama alinirsa bilgi yok olur.
+    drift_pct_per_min = None
+    dev_corrected = None
+    ft, fs, ftime = [], [], []
+    for p in pts:
+        for fr in p.get("per_frame") or []:
+            if fr.get("taken_at") is None:
+                continue
+            ft.append(p["exposure_s"]); fs.append(fr["signal_adu"])
+            ftime.append(fr["taken_at"] + p["exposure_s"] / 2.0)
+    if len(ft) >= 6:
+        ft = np.array(ft); fs = np.array(fs); ftime = np.array(ftime)
+        fmask = fs <= FIT_HI * full_scale
+        if fmask.sum() >= 5:
+            dT = ftime - ftime[fmask].mean()
+            # Poz suresi ile zaman farki arasindaki korelasyon kucukse
+            # ayristirma gecerli. Buyukse merdiven tek yonlu cekilmis
+            # demektir ve duzeltme dogrusalsizligi de yer.
+            corr = float(np.corrcoef(ft[fmask], dT[fmask])[0, 1])
+            if abs(corr) < 0.35:
+                from scipy.optimize import least_squares
+                k0 = float(np.sum(fs[fmask] * ft[fmask]) / np.sum(ft[fmask] ** 2))
+
+                def _resid(par):
+                    kk, cc = par
+                    return fs[fmask] - kk * ft[fmask] * (1 + cc * dT[fmask])
+
+                kk, cc = least_squares(_resid, [k0, 0.0]).x
+                pred_c = kk * ft * (1 + cc * dT)
+                dev_corrected = (fs - pred_c) / np.maximum(pred_c, 1.0) * 100.0
+                dev_corrected = dev_corrected[fmask]
+                drift_pct_per_min = float(cc * 60 * 100)
+
     # Isik kararsizsa bu test dogrusalligi degil isigi olcer. Kaba gosterge:
     # ardisik seviyeler arasi s/t oraninin yayilimi.
     ratio = s[mask] / t[mask]
@@ -260,6 +339,15 @@ def check_linearity(points: list[dict], full_scale: float):
 
     return {
         "max_deviation_pct": float(np.max(np.abs(dev[mask]))),
+        "max_deviation_pct_drift_corrected": (
+            None if dev_corrected is None
+            else float(np.max(np.abs(dev_corrected)))
+        ),
+        "rms_deviation_pct_drift_corrected": (
+            None if dev_corrected is None
+            else float(np.sqrt(np.mean(dev_corrected ** 2)))
+        ),
+        "light_drift_pct_per_min": drift_pct_per_min,
         "light_spread_pct": light_spread,
         "per_point": [
             {"exposure_s": float(ti), "signal_adu": float(si),
@@ -373,7 +461,15 @@ def main():
     print(f"  dolum kapasitesi      = {full_well:,.0f} e-")
     print(f"  uydurma kalitesi   R^2 = {r2:.4f}   ({len(used)} nokta)")
     if lin:
-        print(f"  dogrusallik sapmasi   = {lin['max_deviation_pct']:.2f} %  (maks)")
+        print(f"  dogrusallik sapmasi   = {lin['max_deviation_pct']:.2f} %  (ham, maks)")
+        if lin.get("max_deviation_pct_drift_corrected") is not None:
+            print(f"                        = "
+                  f"{lin['max_deviation_pct_drift_corrected']:.2f} %  "
+                  f"(isik kaymasi duzeltilmis, maks)   <- BUNU KULLAN")
+            print(f"                        = "
+                  f"{lin['rms_deviation_pct_drift_corrected']:.2f} %  (RMS)")
+            print(f"  isik kaymasi          = "
+                  f"{lin['light_drift_pct_per_min']:+.2f} %/dakika")
         print(f"  isik kararliligi      = {lin['light_spread_pct']:.1f} % yayilim "
               f"(sinyal/poz orani)")
 
@@ -395,9 +491,19 @@ def main():
             f"isik kaynagi kararsiz (sinyal/poz orani %{lin['light_spread_pct']:.0f} "
             f"yayiliyor) — DOGRUSALLIK SONUCU GECERSIZ. Kazanc ve okuma gurultusu "
             f"etkilenmez (ikisi de poz suresine bagli degildir).")
-    elif lin and lin["max_deviation_pct"] > 2.0:
-        warn.append("dogrusallik sapmasi %2'nin ustunde — "
-                    "uydurma araligini daraltmayi dene")
+    elif lin:
+        # Kayma duzeltilmisse karar ONA gore verilir; ham deger kaynagin
+        # kararsizligini da icerir ve sensoru haksiz yere sucalar.
+        d = lin.get("max_deviation_pct_drift_corrected")
+        if d is None:
+            if lin["max_deviation_pct"] > 2.0:
+                warn.append("dogrusallik sapmasi %2'nin ustunde — merdiveni "
+                            "PALINDROM sirada cek (cik-in) ki isik kaymasi "
+                            "dogrusalsizliktan ayrilabilsin")
+        elif d > 2.0:
+            warn.append(f"kayma duzeltildikten sonra bile sapma %{d:.1f} — "
+                        f"artik gurultu kaynagin kisa surel oynakligindan; "
+                        f"daha kararli isik gerekli")
     for w in warn:
         print(f"  ! {w}")
 
