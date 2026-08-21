@@ -314,6 +314,16 @@ sahil şehrinde bu ekstra önemli: alçak baktığın her yön şehir veya deniz
 
 Fonun poz süresiyle doğru orantılı arttığını doğrular.
 
+> **A1'in ikinci görevi: doğrusallık.** Bu merdiven aynı zamanda 0.A.6'nın
+> laboratuvar testinin yerini alıyor. Astronomik karanlıkta gökyüzü, oda
+> LED'inden çok daha kararlı bir kaynak; üstelik ölçüm asıl kullanılacak
+> sinyal seviyelerinde ve asıl poz sürelerinde yapılmış oluyor.
+>
+> **Bu yüzden A1'i palindrom sırada çek:**
+> `5 10 15 20 30 60 · 60 30 20 15 10 5`
+> 27 yerine 33 kare olur, ama karşılığında gökyüzü fonunun gece boyunca
+> ne kadar kaydığını da ölçmüş olursun.
+
 **A2 — ISO merdiveni** (15 s sabit, her basamakta 3 kare):
 
 ```
@@ -324,7 +334,7 @@ ISO 800  →  ISO 1600  →  ISO 3200
 **elektron cinsinden** fon değeri aynı çıkmalı — çıkmıyorsa kazanç
 ölçümünde sorun var.
 
-Toplam: 18 + 9 = **27 kare**, poz süresi toplamı ~10 dakika.
+Toplam: 24 + 9 = **33 kare**, poz süresi toplamı ~15 dakika.
 
 ## Dizi B — Sönüm (gece boyunca, ~4 saat)
 

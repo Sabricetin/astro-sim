@@ -24,7 +24,7 @@ Bu yüzden proje, arayüz yazmadan önce **sensörü ölçmekle** başladı.
 
 | Faz | Konu | Durum |
 |---|---|---|
-| 0.A | Sensör karakterizasyonu | ✅ Bitti |
+| 0.A | Sensör karakterizasyonu | ✅ Bitti (doğrusallık dahil) |
 | 0.B | Kontrollü gökyüzü çekimi | ⏸ Açık gece bekliyor |
 | 0.C | Bağımsız fon parlaklığı (VIIRS) | ⏸ |
 | 0.D | Hesap vs gerçek karşılaştırması | ⏸ |

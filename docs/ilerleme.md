@@ -29,6 +29,47 @@ Ayrıntı ve karar gerekçesi: `data/faz0/referans-karsilastirma.md`.
 **Araç doğrulaması:** `tools/test_ptc_math.py` bilinen kazancı %0.14 ile
 geri buluyor — yani analiz kodu değil, verinin kendisi tartışılıyor.
 
+### 0.A.6 — Doğrusallık ✅ (22 Ağustos 2026)
+
+Üç deneme sonunda kapandı. **Doğrusalsızlık saptanmadı** (β = +2.85% ±
+2.46%, yani 1.2σ). Kayma düzeltildikten sonra RMS sapma **%1.96**,
+maks %3.60. Kalan sapmada doluluk seviyesiyle **eğilim yok** — bu
+gürültü, sensörün eğrisi değil.
+
+**Yol boyunca bulunan araç hatası:** `sensor_ptc.py` EXIF'teki
+`ExposureTime` alanını kullanıyordu — o alan makinenin *gösterdiği*
+yuvarlanmış değer. Gerçek süre `ShutterSpeedValue`'da: "0.4 s" aslında
+0.3856 s (−%3.6), "2.5 s" aslında 2.5937 s (+%3.75). Test tam da bu
+büyüklükteki sapmaları aradığı için yuvarlanmış değer testi anlamsız
+kılıyordu. Düzeltince artık RMS %3.02 → %1.88 ve düşük dolulukta görülen
+sistematik eğilim kayboldu. Kazanç etkilenmedi.
+
+**Palindrom protokolü:** merdiven çık-in sırada çekilince poz süresi dizi
+ortasına göre simetrik olur, böylece ışık kayması (tek fonksiyon)
+doğrusalsızlıktan (çift fonksiyon) ayrılabilir. Ölçülen korelasyon
+−0.012. Araç bu düzeltmeyi artık kendisi yapıyor —
+**tek tek kareler üzerinden**, çift ortalaması üzerinden değil: palindromda
+kayma bilgisi çiftin *içindeki* farkta durur, ortalama alınırsa yok olur.
+İlk denemem bu yüzden çalışmadı.
+
+`tools/test_drift_correction.py` sentetik veriyle doğruluyor, özellikle
+iki şeyi: gerçek doğrusalsızlığın **silinmediğini**, ve tek yönlü
+merdivende düzeltmenin **atlandığını** (orada ışık kayması %3.83'lük
+sahte bir doğrusalsızlık üretiyor).
+
+**Beklenmedik ikramiye:** bu ölçüm kazancı 0.1254 e⁻/ADU verdi; kayıtlı
+değer 0.1265. Farklı gün, farklı ışık kaynağı, farklı sıcaklık —
+**%0.9 uyum.** Kazancın tekrarlanabilirliği bağımsız doğrulandı; bu,
+doğrusallık sonucundan daha değerli çıktı.
+
+**Neden %1 değil %2–3 ile kapatıldı:** kalan gürültü ışık kaynağının kısa
+süreli oynaklığı — ard arda 9 sn arayla çekilen iki 3.2 s karesi arasında
+bile %0.6 açıklanamayan fark var. %1'in altına inmek entegre küre ister.
+Faz 5'in çıkış kriteri %15; %2–3 bu bütçeye rahat sığıyor. Kesin
+doğrulama **Faz 0.B Dizi A'ya** devredildi: gökyüzü merdiveni zaten bir
+doğrusallık testi ve astronomik karanlıkta gökyüzü çok daha kararlı bir
+kaynak.
+
 ---
 
 ## Faz 1 — Zaman ve koordinat ✅
@@ -223,7 +264,6 @@ katmanında sesli bir hataya dönüşüyor.
 
 | Faz | Durum | Engel |
 |---|---|---|
-| 0.A.6 | Doğrusallık merdiveni yeniden çekimi | Kararlı ışık kaynağı, ~20 dk, iç mekân |
 | 0.B | Kontrollü gökyüzü çekimi | Açık ve ay'sız gece |
 | 0.C | VIIRS fon parlaklığı sorgusu | 0.B'nin konumu belli olunca |
 | 0.D | Hesap–gerçek karşılaştırması | 0.B + 0.C |
