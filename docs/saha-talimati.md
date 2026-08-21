@@ -455,6 +455,15 @@ data/faz0b/
   saha-notlari.md   yukarıdaki formu doldurulmuş hâli
 ```
 
+**Analiz hazır — beklemeyeceksin.** Tek komut:
+
+```bash
+./.venv/bin/python tools/analyze_field_night.py \
+  --root data/faz0b --lat <ENLEM> --lon <BOYLAM> --elev <RAKIM>
+```
+
+Ayrıntı: [`analiz-araclari.md`](analiz-araclari.md)
+
 Sonra **0.C**: GPS koordinatını VIIRS'e sorup o noktanın bağımsız fon
 parlaklığını çekeceğiz. Bunu ben yapacağım, senden sadece koordinat
 lazım.
