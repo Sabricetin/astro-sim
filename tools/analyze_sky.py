@@ -42,7 +42,8 @@ from sensor_ptc import load_plane, raw_files
 def read_meta(paths):
     out = subprocess.run(
         ["exiftool", "-j", "-n", "-ISO", "-ExposureTime", "-ShutterSpeedValue",
-         "-CreateDate", "-CameraTemperature", *[str(p) for p in paths]],
+         "-CreateDate", "-CameraTemperature", "-FNumber",
+         *[str(p) for p in paths]],
         capture_output=True, text=True, check=True).stdout
     return {Path(d["SourceFile"]).name: d for d in json.loads(out)}
 
@@ -71,6 +72,9 @@ def main() -> int:
     ap.add_argument("--zero-point", type=float, default=None,
                     help="analyze_extinction.py'den gelen ZP. Verilirse fon "
                          "kadir/arcsec^2'ye cevrilir.")
+    ap.add_argument("--zero-point-fnumber", type=float, default=None,
+                    help="ZP'nin OLCULDUGU diyafram. Bu dizinin diyaframi "
+                         "farkliysa duzeltme uygulanir.")
     ap.add_argument("--arcsec-per-pixel", type=float, default=None,
                     help="acisal olcek; 206.265*piksel_um/odak_mm")
     ap.add_argument("--out", type=Path, default=Path("data/faz0b/fon"))
@@ -112,6 +116,7 @@ def main() -> int:
             "star_count": len(fwhms),
             "temp_c": d.get("CameraTemperature"),
             "taken_at": d.get("CreateDate"),
+            "f_number": float(d.get("FNumber") or 0) or None,
         })
     if len(rows) < 3:
         raise SystemExit(f"Yetersiz kare ({len(rows)}).")
@@ -208,18 +213,48 @@ def main() -> int:
     # gecerek gelir ve soner, gokyuzu fonu ise atmosferin ve sehrin
     # kendi isigi — zaten yerde olculuyor.
     if args.zero_point is not None and args.arcsec_per_pixel is not None:
+        # --- Diyafram duzeltmesi ---
+        #
+        # Sifir noktasi belirli bir diyaframda olculur. Dizi B genelde
+        # kisilmis diyaframla cekilir (parlak yildiz doymasin diye),
+        # Dizi A ise acik. Aciklik ALANI 1/N^2 ile degistigi icin:
+        #
+        #     ZP(N) = ZP_ref + 5·log10(N_ref / N)
+        #
+        # Duzeltmesiz f/11 -> f/2.8 aktarimi 2.97 kadir, yani 15 KAT
+        # hata verir. Aciklik alani saf geometri oldugu icin bu tasima
+        # kesindir; tasinmayan tek sey lens veriminin diyaframla
+        # degisimi ve o pratikte kucuk.
+        zp_eff = args.zero_point
+        own = {r["f_number"] for r in rows if r["f_number"]}
+        if args.zero_point_fnumber and len(own) == 1:
+            n_here = own.pop()
+            n_ref = args.zero_point_fnumber
+            if abs(n_here - n_ref) > 1e-6:
+                shift = 5.0 * np.log10(n_ref / n_here)
+                zp_eff = args.zero_point + shift
+                print(f"\n  diyafram duzeltmesi: ZP f/{n_ref:g} -> f/{n_here:g}"
+                      f"  ({shift:+.3f} kadir)")
+        elif args.zero_point_fnumber and len(own) > 1:
+            warn.append("bu dizide diyafram degismis; sifir noktasi "
+                        "tasinamadi, mutlak fon GUVENILMEZ")
+        elif not args.zero_point_fnumber:
+            warn.append("--zero-point-fnumber verilmedi; ZP'nin bu dizinin "
+                        "diyaframinda olculdugu VARSAYILDI. Farkliysa sonuc "
+                        "kat kat yanlis olur.")
         omega = args.arcsec_per_pixel ** 2      # piksel basina arcsec^2
         for iso, v in per_iso.items():
             adu_per_s = v["adu_per_s"]
             if adu_per_s <= 0:
                 continue
             m_inst = -2.5 * np.log10(adu_per_s / omega)
-            v["sky_mag_per_sq_arcsec"] = float(m_inst + args.zero_point)
+            v["sky_mag_per_sq_arcsec"] = float(m_inst + zp_eff)
         mus = [v["sky_mag_per_sq_arcsec"] for v in per_iso.values()
                if "sky_mag_per_sq_arcsec" in v]
         if mus:
             mu = float(np.mean(mus))
             result["sky_mag_per_sq_arcsec"] = mu
+            result["zero_point_effective"] = float(zp_eff)
             print(f"\n  GOKYUZU FONU = {mu:.2f} kadir/arcsec^2")
             bortle = ("1-2 (mukemmel)" if mu > 21.7 else
                       "3-4 (kirsal)" if mu > 21.0 else

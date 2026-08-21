@@ -90,6 +90,9 @@ def main() -> int:
             if zp is not None:
                 extra += ["--zero-point", str(zp),
                           "--arcsec-per-pixel", f"{scale:.4f}"]
+                zp_n = ext.get("zero_point_f_number") if ext else None
+                if zp_n:
+                    extra += ["--zero-point-fnumber", str(zp_n)]
             run("analyze_sky.py", ["--frames", str(args.root / folder)]
                 + sum([["--gain-iso", f"{k}={v}"] for k, v in GAINS.items()], [])
                 + extra + ["--out", str(out / tag)])

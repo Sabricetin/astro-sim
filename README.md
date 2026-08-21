@@ -36,6 +36,8 @@ Bu yüzden proje, arayüz yazmadan önce **sensörü ölçmekle** başladı.
 | 5 | Radyometri — kalibrasyon | ⏸ 0.B/0.C/0.D bekliyor |
 | 6–9 | Samanyolu, ufuk, ürünleşme | ⬜ |
 
+**Teknik olmayan özet:** [`docs/basit-anlatim.md`](docs/basit-anlatim.md)
+
 Ayrıntılı plan: [`yol-haritasi.md`](yol-haritasi.md) ·
 Faz kapanışları ve kanıtları: [`docs/ilerleme.md`](docs/ilerleme.md)
 

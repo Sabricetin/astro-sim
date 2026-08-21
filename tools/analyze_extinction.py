@@ -133,7 +133,8 @@ def main() -> int:
             skipped.append(f"{p.name}: merkezde yildiz yok")
             continue
         scans.append({"path": p, "plane": plane, "central": central, "exp": exp,
-                      "utc": utc, "alt": alt, "az": az})
+                      "utc": utc, "alt": alt, "az": az,
+                      "f_number": float(d.get("FNumber") or 0) or None})
 
     if not scans:
         raise SystemExit("Hicbir karede merkezde yildiz bulunamadi.")
@@ -215,15 +216,21 @@ def main() -> int:
     # Ayni ZP gokyuzu fonuna da uygulanir — cunku ikisi de ayni optikten,
     # ayni gecede, yerde olculdu. Fona sonum duzeltmesi UYGULANMAZ:
     # yildiz isigi atmosferden gecerek gelir, fon atmosferin kendi isigi.
+    _fnums = {r for r in (sc.get("f_number") for sc in scans) if r}
+    _zp_fnum = float(sorted(_fnums)[0]) if len(_fnums) == 1 else None
+    if len(_fnums) > 1:
+        print(f"  ! Dizi B icinde diyafram degismis: {sorted(_fnums)}. "
+              f"Sifir noktasi tasinamaz, gecersiz sayiliyor.")
+
     zp = None
-    if args.target_mag is not None:
+    if args.target_mag is not None and _zp_fnum is not None:
         zp = float(args.target_mag - m0)
 
     print(f"\n  SONUM KATSAYISI  k = {k:.4f} +- {k_err:.4f} kadir / hava kutlesi")
     print(f"  atmosfer disi     m0 = {m0:.4f}")
     if zp is not None:
         print(f"  SIFIR NOKTASI     ZP = {zp:.4f}  "
-              f"(hedef V={args.target_mag})")
+              f"(hedef V={args.target_mag}, f/{_zp_fnum:g}'de)")
         print(f"     m_yerdeki = m_alet + ZP")
         print(f"     Bu sayi QE, lens verimi ve aciklik alanini birlikte")
         print(f"     tasiyor. Gokyuzu fonunu kadir/arcsec^2'ye cevirmek icin")
@@ -265,6 +272,11 @@ def main() -> int:
         "k_uncertainty": k_err,
         "zero_point_m0": float(m0),
         "photometric_zero_point": zp if chosen == 0 else None,
+        # ZP HANGI DIYAFRAMDA olculdugu kaydedilmeli. Baska diyaframa
+        # tasinirken duzeltme sart: aciklik alani 1/N^2 ile degisir.
+        # f/11'de olculen ZP'yi f/2.8'e duzeltmeden uygulamak 2.97
+        # kadir, yani 15 KAT hata demek.
+        "zero_point_f_number": _zp_fnum,
         "target_magnitude": args.target_mag,
         "residual_rms_mag": rms,
         "airmass_range": [float(X.min()), float(X.max())],

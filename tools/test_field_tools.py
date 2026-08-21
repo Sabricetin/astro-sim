@@ -65,7 +65,7 @@ def build_darks(dark_e_per_s, exposures, temp=37, hot=0.0, nr_on=False):
     return store, metas
 
 
-def build_sky(rate_e_per_s, isos, exposures, gains, nonlinear=0.0):
+def build_sky(rate_e_per_s, isos, exposures, gains, nonlinear=0.0, fnum=2.8):
     store, metas = {}, {}
     i = 0
     for iso in isos:
@@ -76,7 +76,7 @@ def build_sky(rate_e_per_s, isos, exposures, gains, nonlinear=0.0):
             store[name] = frame(BIAS + adu)
             metas[name] = {"SourceFile": name, "ISO": iso, "ExposureTime": t,
                            "ShutterSpeedValue": t, "CreateDate": "2026:09:10 23:00:00",
-                           "CameraTemperature": 20}
+                           "CameraTemperature": 20, "FNumber": fnum}
     return store, metas
 
 
@@ -215,6 +215,46 @@ def main() -> int:
     ok &= good
     print(f"{'ZP 1 kadir kayinca fon da 1 kadir kayiyor':<40} {1.0:>9.2f} "
           f"{shift:>9.3f} {abs(shift - 1):>8.3f}  {'OK' if good else 'HATA'}")
+
+    print("\nDIYAFRAM TASIMASI (Dizi B kisik, Dizi A acik)")
+    print(f"{'senaryo':<40} {'gercek':>9} {'bulunan':>9} {'hata':>8}  sonuc")
+    print("-" * 78)
+    # ZP f/11'de olculdu, fon f/2.8'de cekildi. Duzeltme yapilmazsa
+    # 5*log10(11/2.8) = 2.97 kadir, yani 15 KAT hata olur.
+    ZP_AT_11 = 17.5
+    MU_TRUE = 20.5
+    zp_at_28 = ZP_AT_11 + 5 * np.log10(11 / 2.8)
+    m_inst = MU_TRUE - zp_at_28
+    adu_per_s = OMEGA * 10 ** (-0.4 * m_inst)
+    store, metas = build_sky(adu_per_s * gains[1600], [1600],
+                             [5, 10, 15, 20, 30, 60], gains, fnum=2.8)
+
+    # (a) duzeltmeli
+    run(sky, ["x", "--frames", "."] +
+        sum([["--gain-iso", g] for g in gain_args], []) +
+        ["--zero-point", str(ZP_AT_11), "--zero-point-fnumber", "11",
+         "--arcsec-per-pixel", str(SCALE), "--out", "/tmp/_sky", "--roi", "0"],
+        store, metas)
+    got = json.loads(Path("/tmp/_sky.json").read_text())["sky_mag_per_sq_arcsec"]
+    good = abs(got - MU_TRUE) < 0.02
+    ok &= good
+    print(f"{'f/11 -> f/2.8, duzeltmeli':<40} {MU_TRUE:>9.2f} {got:>9.3f} "
+          f"{abs(got - MU_TRUE):>8.3f}  {'OK' if good else 'HATA'}")
+
+    # (b) duzeltmesiz: 2.97 kadir sapmali — hatanin BUYUKLUGUNU gosterir
+    run(sky, ["x", "--frames", "."] +
+        sum([["--gain-iso", g] for g in gain_args], []) +
+        ["--zero-point", str(ZP_AT_11),
+         "--arcsec-per-pixel", str(SCALE), "--out", "/tmp/_sky", "--roi", "0"],
+        store, metas)
+    r = json.loads(Path("/tmp/_sky.json").read_text())
+    off = abs(r["sky_mag_per_sq_arcsec"] - MU_TRUE)
+    warned = any("VARSAYILDI" in w for w in r["warnings"])
+    good = abs(off - 2.97) < 0.05 and warned
+    ok &= good
+    print(f"{'duzeltmesiz -> 2.97 kadir sapma + uyari':<40} {2.97:>9.2f} "
+          f"{off:>9.3f} {abs(off - 2.97):>8.3f}  "
+          f"{'OK (uyardi)' if good else 'HATA'}")
 
     print("-" * 78)
     print("SONUC:", "TUM TESTLER GECTI" if ok else "KALDI")

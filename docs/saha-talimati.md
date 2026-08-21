@@ -13,124 +13,26 @@ edilemez.
 
 ---
 
-# 0.A.6 — Doğrusallık merdiveni (iç mekân, ~30 dakika)
+# 0.A.6 — Doğrusallık merdiveni ✅ KAPANDI (22 Ağustos 2026)
 
-## Neden tekrar
+Bu iş bitti, tekrar yapman gerekmiyor. Üç denemede kapandı; kayıt
+`data/faz0/dogrusallik-deneme3.md` ve `docs/ilerleme.md` içinde.
 
-İlk denemede ışık kaynağı kararsızdı. Analiz aracı bunu yakaladı ve
-uyardı — sinyal, poz süresiyle orantılı artmadı. Kazanç ölçümü bundan
-etkilenmedi (kazanç poz süresini bilmeyi gerektirmez), ama **doğrusallık
-testi bozuldu.**
+Kısaca ne oldu:
 
-Doğrusallık şu soruyu cevaplıyor: sensör iki kat ışığa iki kat sayı ile mi
-cevap veriyor? Cevap "hayır" ise foton hesabının tamamı yamuk oturur.
-
-## Işık kaynağı — iki denemeyi de bu bozdu
-
-**Gece, kapalı odada, tavan LED ampulü.** Gündüz ışığı bu iş için
-uygun değil: 2. denemede ışık dakikada %3.9 düştü ve üstüne %2
-düzensiz oynadı. Sensörün aranan doğrusalsızlığı (<%1) bunun altında
-kaldı — ölçüm, ölçmeye çalıştığı şeyden gürültülüydü.
-
-### "LED kullanma" uyarısı bu merdivende geçersiz
-
-İlk talimatta LED'i yasaklamıştım. O uyarı merdiven 1/60 s ile
-başlarken doğruydu. Yeni merdivende en kısa poz **0.4 s** ve şebeke
-dalgalanması 100 Hz: 0.4 s = 40 çevrim, 0.5 = 50, 0.8 = 80, 1.3 = 130,
-1.6 = 160, 2 = 200, 2.5 = 250, 3.2 = 320. **Hepsi tam sayı çevrim**,
-dalgalanma tam olarak ortalanıyor.
-
-### Şartlar
-
-- **Dimmer'a dokunma, kısılabilir ampul kullanma.** PWM asıl orada.
-- **Ampulü 10 dakika önce yak.** LED ısındıkça ışığı %5–10 düşer,
-  sonra sabitlenir. Sıcak halde çek.
-- **Perdeleri kapat.** Sızan gün ışığı bütün işi bozar.
-- Işığı beyaz kâğıda vurdur, kâğıdın yansımasını çek — doğrudan lense
-  tutma.
-
-Akkor (filamanlı) ampul varsa o da olur ve daha da iyidir; termal
-ataleti dalgalanmayı tamamen siler.
-
-## Ayarlar
-
-| Ayar | Değer | Neden |
+| Deneme | Işık | Sonuç |
 |---|---|---|
-| Format | **RAW** | JPEG ton eğrisi uygular, ölçüm biter |
-| Mod | **Manuel (M)** | Otomatik hiçbir şey olmayacak |
-| ISO | **1600** (tek ISO) | Doğrusallık ISO'ya bağlı değil |
-| Diyafram | Sabit, ne olursa | Merdiven boyunca **değiştirme** |
-| Odak | Sonsuz veya el ile | Fark etmez, ama değiştirme |
-| Yüksek Işık Ton Önceliği | **KAPALI** | Açıksa efektif kazancı değiştirir |
-| Uzun Poz Parazit Azaltma | **KAPALI** | Kendi karanlık karesini çıkarır, ölçümü yok eder |
-| Kararma/titreme önleme | **KAPALI** | Poz süresini kendi kafasına göre oynatır |
+| 1 | Pencere, akşam | Üst basamak doydu, aralık %60'ta bitti |
+| 2 | Pencere, akşam | Palindrom işledi, ışık 3 dk'da %16 düştü |
+| 3 | **Gece, oda LED'i** | ✅ doğrusalsızlık saptanmadı |
 
-## Merdiven
+Yol boyunca **bir araç hatası** bulundu: `sensor_ptc.py`, EXIF'teki
+*gösterilen* poz süresini kullanıyordu ("0.4 s") ama makinenin gerçek
+süresi farklı (0.3856 s). Düzeltildi.
 
-Işığı ve diyaframı sabitle. Yalnızca **poz süresini** değiştir. Her
-basamakta **2 kare**.
-
-### Üç kural (1. denemede üçü de ihlal edildi)
-
-**1. En üst basamak doyuma DEĞMESİN, %85'te dursun.**
-Doymuş kare doğrusalsızlık değil kırpma gösterir ve ölçümü bozar.
-
-**2. Merdiven %60'ta bitmesin — asıl iş %60 ile %90 arasında.**
-Doğrusalsızlık orada ortaya çıkar. Aşağıda temiz çıkması bir şey
-kanıtlamaz.
-
-**3. En kısa poz 1/4 s'den kısa olmasın.**
-Kısa pozlarda perdenin zamanlama hatası ölçüme karışır. 1. denemede
-1/15 ile 1/8 arasında %5.1'lik bir basamak çıktı ve kaynağı ayırt
-edilemedi.
-
-### Diyaframı poza göre seç, tersini değil
-
-Merdiveni uzun pozlara oturtmak için ışığı kısman gerekiyor. En kolay
-yol diyafram. Yöntem:
-
-1. Planladığın **en uzun pozu** (2 s) çek.
-2. Kontrol et:
-   ```bash
-   ./.venv/bin/python tools/check_flat.py <kare.CR2>
-   ```
-3. %85 civarıysa tamam. Yüksekse bir durak kıs, düşükse bir durak aç.
-
-1. denemenin ışığında bu **f/16** ediyordu (f/14'ten bir 1/3 durak).
-
-### Basamaklar
-
-```
-1/4 s → 0.4 s → 0.6 s → 0.8 s → 1 s → 1.3 s → 1.6 s → 2 s
-```
-
-Sekiz basamak, kabaca %11'den %90'a. Üstte adımlar sıklaşıyor —
-doğrusalsızlığın aranacağı yer orası.
-
-### Sırayı palindrom yap
-
-Kareleri şu sırayla çek:
-
-```
-1/4  0.4  0.6  0.8  1  1.3  1.6  2   2  1.6  1.3  1  0.8  0.6  0.4  1/4
-```
-
-Yani merdiveni bir çık, bir in. Her basamağın iki karesi dizinin iki
-ucuna düşer.
-
-**Neden:** Böylece bir basamağın iki karesi arasındaki fark, doğrudan
-**ışığın tüm çekim boyunca ne kadar kaydığını** ölçer. Ardışık çekilmiş
-iki kare yalnızca o anki kararlılığı gösterir — 1. denemede tam olarak
-bu yüzden ışık "kararlı" göründü ama diziler arasında %5 kayma vardı.
-
-Ayrıca bu sıra Bulgu 3'ü de çözer: basamak poz süresini takip ediyorsa
-perde, saati takip ediyorsa ışık.
-
-## Ne zaman güvenilir
-
-Aynı basamağın iki karesi birbirine **%1 içinde** uyuşmalı. Uyuşmuyorsa
-ışık kararsız — kaynağı değiştir, tekrar et. Bu kontrolü araç kendisi
-yapıyor ve uyarıyor.
+Sonuç: sensör %2 içinde doğrusal. Kesin doğrulama, gökyüzünde
+**Dizi A** ile yapılacak (aşağıda) — astronomik karanlıkta gökyüzü oda
+LED'inden çok daha kararlı bir ışık kaynağı.
 
 ---
 
@@ -186,43 +88,26 @@ Mersin için hesaplandı. Kritik olan Ay'ın yüzdesi değil, **gerçekten
 ay'sız ve karanlık geçen süre** (Güneş −18°'nin altında *ve* Ay ufkun
 altında).
 
-### Ağustos — bir tek gece var, o da bu gece
-
-| Gece | Ay | Ay'sız karanlık | Süre |
-|---|---|---|---|
-| **20/21 Ağustos** | %58 | **23:30 – 04:29** | **299 dk** ✅ |
-| 21/22 Ağustos | %67 | 00:14 – 04:30 | 256 dk — sadece A dizisi |
-| 22/23 Ağustos | %76 | 01:06 – 04:31 | 205 dk — sadece A dizisi |
-| 23 Ağustos – 5 Eylül | %83–100 | yok veya çok kısa | ❌ |
-
-Ay bu gece 23:30'da batıyor ve şafağa kadar geri gelmiyor. **299 dakika
-üç dizinin tamamına yetiyor.**
-
-26–31 Ağustos arası hiç ay'sız karanlık yok — dolunay 27 Ağustos.
-
-### Eylül — rahat pencere
+### 8–13 Eylül 2026 — hedef pencere bu
 
 | Gece | Ay | Ay'sız karanlık | Süre |
 |---|---|---|---|
 | 6/7 Eylül | %22 | 20:31 – 01:37 | 306 dk |
 | 7/8 Eylül | %13 | 20:30 – 02:52 | 382 dk |
-| **8–13 Eylül** | %0–9 | **20:2x – 04:5x** | **457–514 dk** ✅✅ |
+| **8/9 Eylül** | %6 | 20:29 – 04:06 | 457 dk |
+| **9/10 Eylül** | %2 | 20:26 – 04:50 | 504 dk |
+| **10/11 Eylül** | **%0** | **20:25 – 04:52** | **506 dk** |
+| **11/12 Eylül** | %1 | 20:24 – 04:52 | 508 dk |
+| **12/13 Eylül** | %4 | 20:21 – 04:53 | 512 dk |
+| 13/14 Eylül | %9 | 20:20 – 04:54 | 514 dk |
 
-10 Eylül yeni ay.
+10 Eylül yeni ay. Kalın yazılan dört gece de rahat rahat yetiyor —
+hangisinde hava açıksa o.
 
-### Hangisi
+### Yedek: 7–13 Ekim 2026
 
-**Bu gece gidebilecek durumdaysan git.** 299 dakika yetiyor, üç dizi de
-sığıyor ve ölçüm üç hafta erken biter — Faz 5 iskeleti kalibrasyonsuz
-beklemek yerine hemen bağlanır.
-
-**Hazır değilsen zorlama.** İlk saha çekimini gece yarısı aceleyle
-yapmak, sabaha karşı "şu ayarı unuttum" demenin en kısa yolu. 8–13 Eylül
-sana 8+ saat veriyor, yani hata yapıp tekrar etme payı var. Sadece üç
-hafta.
-
-Ara yol: **bu gece prova yap.** Kurulumu kur, odağı yap, birkaç deneme
-karesi çek, `check_flat.py`'ye sor. Eylül'de asıl çekime hazır gidersin.
+Aynı şekilde ay'sız. Vega Ekim'de daha erken alçalır, yani Dizi B'nin
+duraklarını daha erken yakalarsın. Eylül kaçarsa buradan devam.
 
 ## Yanına al
 
@@ -230,7 +115,7 @@ karesi çek, `check_flat.py`'ye sor. Eylül'de asıl çekime hazır gidersin.
 - Tripod, uzaktan kumanda veya 2 sn gecikmeli deklanşör
 - **Yedek pil** (soğuk pili yer, üşüyen pil poz süresini etkilemez ama
   gecenin ortasında biter)
-- Boş hafıza kartı (~80 RAW kare yer açar)
+- Boş hafıza kartı (**~92 RAW kare ≈ 3.5 GB**)
 - ~~Termometre~~ **gerekmiyor** — aşağıdaki nota bak
 - El feneri — **kırmızı** veya en kısık ayar
 - Not defteri veya telefonda not
@@ -277,7 +162,7 @@ fon parlaklığını çekeceğiz; koordinat yoksa karşılaştırma yapılamaz.
 Telefonun harita uygulamasından ondalık derece olarak al (37.06621,
 37.38334 gibi), "37°3'58" biçiminde değil.
 
-## Makine ayarları — gece boyunca değişmeyecek
+## Makine ayarları
 
 Aynı liste, 0.A.6'daki gibi. Ekstra olarak:
 
@@ -291,14 +176,32 @@ Aynı liste, 0.A.6'daki gibi. Ekstra olarak:
 çarpmamak için bant yapıştır. Odak kaydıysa yıldız fotometrisi biter ve
 bunu ancak evde fark edersin.
 
+### Neyin sabit kaldığı, neyin değiştiği
+
+| | |
+|---|---|
+| **Gece boyunca sabit** | lens, odak, IS kapalı, parazit azaltma kapalı |
+| **Diziye göre değişir** | **diyafram**, poz süresi, ISO |
+
+Dizi B kısılmış diyaframla çekilir (parlak yıldız doymasın diye),
+Dizi A açık diyaframla. Bu **kasıtlı** ve araçlar bunu biliyor:
+sıfır noktası bir diyaframdan diğerine matematiksel olarak taşınıyor
+(`ZP(N) = ZP_ref + 5·log10(N_ref/N)`).
+
+Senden istenen tek şey: **hangi dizinin hangi diyaframla çekildiği
+EXIF'te doğru olsun** — otomatik oluyor, sen bir şey yapma. Sadece bir
+dizinin *ortasında* diyaframı değiştirme; araçlar o durumda sonucu
+geçersiz sayar ve uyarır.
+
 ## Dizi A — Fon (~20 dakika)
 
 **Nereye:** Pegasus karesi. Mersin'den o gecenin en tepe anında:
 
-| Gece | En iyi an | Yükseklik | Azimut |
-|---|---|---|---|
-| 20/21 Ağustos | **01:30 – 02:00** | 78° | 164° → 197° (güney, tepende) |
-| 8–13 Eylül | **00:00 – 00:30** | 77° | 170° → 200° |
+| En iyi an | Yükseklik | Azimut |
+|---|---|---|
+| **00:00 – 00:45** | 78° | güney, neredeyse tam tepende |
+
+10 Eylül'de en tepe an **00:22**, azimut 180° (tam güney).
 
 **Neden orası:** Galaktik enlem −31°, yani Samanyolu'ndan uzak. Fon
 ölçümünde difüz galaktik ışık istemiyoruz; o Faz 6'nın konusu. Ayrıca
@@ -392,29 +295,23 @@ Araçlar bunu kendileri hallediyor; senin bir şey yapman gerekmiyor.
 
 Her durakta **5 kare.**
 
-### 20/21 Ağustos gecesi (Mersin)
+### Durak çizelgesi — 10/11 Eylül gecesi (Mersin)
 
 | Yerel saat | Vega yüksekliği | Azimut | Hava kütlesi X |
 |---|---|---|---|
-| 23:30 | 65° | 284° | 1.11 |
-| 00:00 | 59° | 286° | 1.17 |
-| 00:30 | 53° | 288° | 1.25 |
-| 01:00 | 47° | 290° | 1.36 |
-| 02:00 | 36° | 295° | 1.69 |
-| 02:30 | 31° | 298° | 1.94 |
-| 03:30 | 21° | 304° | 2.83 |
+| 21:41 | 70° | 283° | 1.06 |
+| 22:32 | 60° | 286° | 1.15 |
+| 23:24 | 50° | 289° | 1.30 |
+| 00:18 | 40° | 293° | 1.56 |
+| 01:13 | 30° | 298° | 2.00 |
+| 01:42 | 25° | 301° | 2.37 |
+| 02:11 | 20° | 304° | 2.91 |
 
-Kaldıraç **1.11 → 2.83**, yani 1.72 hava kütlesi. 0.25 mag/X ile Vega bu
-aralıkta **0.43 kadir** sönmeli.
+Kaldıraç **1.06 → 2.91**, yani 1.85 hava kütlesi. Ölçmeye çalıştığımız
+sönüm bu aralıkta yaklaşık **0.5 kadir** — rahatça görülebilir bir fark.
 
-01:30 durağını atladım — orası A dizisine ayrıldı (Pegasus tam tepede).
-
-### 8–13 Eylül geceleri (Mersin)
-
-Eylül'de Vega daha erken yükselir; gece başında 70°'nin üstünde bulursun
-ve 20°'ye kadar takip edecek bol vaktin olur. Kaldıraç ~1.06 → 2.90
-(1.84 hava kütlesi, **0.46 kadir**). Çizelgeyi uygulamadan okuyabilirsin:
-hedefi Vega yap, tarihi seç, kaydırıcıyı oynat.
+Başka bir gece seçersen çizelge kayar; uygulamadan okuyabilirsin
+(hedefi Vega yap, tarihi seç, kaydırıcıyı oynat).
 
 **Neden bu dizi en kıymetlisi:** Asıl hedefin (galaktik merkez) 24°'de
 duruyor, yani hava kütlesi ~2.4. Sadece tepe civarında kalibre edilmiş
@@ -443,24 +340,30 @@ Toplam: **24 kare.** Bunlar karanlık akımı ve amp glow'u ölçer;
 04:30'dan sonra rahat rahat çek. Tek şart: makine hâlâ dışarıda ve aynı
 sıcaklıkta olsun, çantaya sokup ısıtma.
 
-## Bu gecenin (20/21 Ağustos) dakika dakika planı
+## Gecenin dakika dakika planı (10/11 Eylül örneği)
 
 | Saat | İş |
 |---|---|
-| 22:30 | Sahada ol. Kurulum, makine ayarları, **odak** (canlı görüntü 10× zoom, Vega'ya). Odak halkasına bant. |
-| 23:00 | Deneme karesi çek, histograma bak. Ay hâlâ batmakta — bu kare ölçüm değil, kontrol. |
-| **23:30** | **Ay battı. B dizisi başlıyor:** Vega 65°, 5 kare. |
-| 00:00 | B — Vega 59°, 5 kare |
-| 00:30 | B — Vega 53°, 5 kare |
-| 01:00 | B — Vega 47°, 5 kare |
-| 01:30 | **A dizisi** — Pegasus tepede (78°). A1 + A2, 27 kare, ~20 dk |
-| 02:00 | B — Vega 36°, 5 kare |
-| 02:30 | B — Vega 31°, 5 kare |
-| 03:30 | B — Vega 21°, 5 kare. **B bitti.** |
-| 03:45 | **C dizisi** — kapak tak, 24 karanlık kare. Şafak sökebilir, önemi yok. |
-| 04:30 | Toparlan. Son kareyi çekmeden makineyi ısıtma. |
+| 20:45 | Sahada ol. Kurulum. GPS koordinatını yaz. |
+| 21:00 | **Odak**: canlı görüntü, 10× zoom, Vega'ya. Odak halkasına bant. |
+| 21:15 | Dizi B ayarını bul: f/11 1/3 s tek kare → `check_star.py` → %40–70 olana kadar diyaframı oynat. |
+| **21:41** | **B başlar:** Vega 70°, 5 kare |
+| 22:32 | B — Vega 60°, 5 kare |
+| 23:24 | B — Vega 50°, 5 kare |
+| **00:00** | **A dizisi** — Pegasus tepede (78°). Ayarı A'ya çevir: f/2.8, ISO 1600. 33 kare, ~15 dk |
+| 00:18 | B — Vega 40°, 5 kare (ayarı B'ye geri al) |
+| 01:13 | B — Vega 30°, 5 kare |
+| 01:42 | B — Vega 25°, 5 kare |
+| **02:11** | B — Vega 20°, 5 kare. **B bitti.** |
+| 02:25 | **C dizisi** — kapak tak, 24 karanlık kare. ~20 dk |
+| 02:50 | Toparlan. Son kareyi çekmeden makineyi ısıtma. |
 
-Toplam **~86 kare**, ~5 saat saha.
+Toplam **~92 kare**, ~6 saat saha. Karanlık 04:52'ye kadar sürüyor,
+yani bol payın var.
+
+**Dikkat:** Dizi A ve Dizi B **farklı diyaframla** çekiliyor. Geçişlerde
+ayarı değiştirmeyi unutma — ama Dizi B'nin ayarını her seferinde
+**aynı** değere döndür.
 
 ## Sessizce ölçümü bozan şeyler
 
@@ -528,4 +431,4 @@ görünüp analizde sessizce yanlış sonuç verir. A dizisi bittiyse o
 kullanılabilir; B dizisi yarım kaldıysa çöptür — sönüm eğrisi tam
 kaldıraç olmadan anlamsız.
 
-Ekim penceresi yedek: 7–13 Ekim.
+Ekim penceresi yedek: 7–13 Ekim 2026.
