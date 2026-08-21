@@ -36,20 +36,25 @@ LAT, LON, ELEV = 36.80, 34.62, 10.0
 UTC_OFFSET = 3.0
 
 
-def make_star_frame(flux):
+WHITE = 15360.0
+
+
+def make_star_frame(flux, extra=None, clip=False):
     yy, xx = np.mgrid[0:SIZE, 0:SIZE]
     sigma = FWHM / 2.3548
     cy, cx = SIZE / 2 + 3.2, SIZE / 2 - 2.7
     amp = flux / (2 * np.pi * sigma ** 2)
     img = SKY + amp * np.exp(-((yy - cy) ** 2 + (xx - cx) ** 2) / (2 * sigma ** 2))
     # Birkac sonuk yildiz: merkez secimi dogru olani bulmali.
-    for (sy, sx, sf) in [(30, 40, flux * 0.05), (170, 150, flux * 0.03)]:
+    for (sy, sx, sf) in (extra if extra is not None else
+                        [(30, 40, flux * 0.05), (170, 150, flux * 0.03)]):
         img += (sf / (2 * np.pi * sigma ** 2)) * np.exp(
             -((yy - sy) ** 2 + (xx - sx) ** 2) / (2 * sigma ** 2))
-    return img + RNG.normal(0, NOISE, img.shape)
+    img = img + RNG.normal(0, NOISE, img.shape)
+    return np.clip(img, 0, WHITE) if clip else img
 
 
-def run_case(true_k, times_local, cloud_on=None, label=""):
+def run_case(true_k, times_local, cloud_on=None, label="", saturate_main=False):
     """Sahte kareler uretip aracin k'yi geri kazanmasini olcer."""
     store, metas = {}, {}
     for i, lt in enumerate(times_local):
@@ -61,7 +66,14 @@ def run_case(true_k, times_local, cloud_on=None, label=""):
         flux = F0 * 10 ** (-0.4 * true_k * X)
         if cloud_on is not None and i in cloud_on:
             flux *= 0.6          # ince bulut
-        store[name] = make_star_frame(flux)
+        if saturate_main:
+            # Ana yildiz doymus, ikinci sira temiz: arac ikinciye gecmeli.
+            store[name] = make_star_frame(
+                flux * 400,
+                extra=[(SIZE / 2 + 30, SIZE / 2 + 25, flux)],
+                clip=True)
+        else:
+            store[name] = make_star_frame(flux)
         metas[name] = {
             "SourceFile": name, "ISO": 1600, "ExposureTime": EXPOSURE,
             "ShutterSpeedValue": EXPOSURE,
@@ -132,6 +144,18 @@ def main() -> int:
     ok &= good
     print(f"{'yan urun FWHM':<38} {FWHM:>9.2f} {fw:>9.3f} "
           f"{abs(fw - FWHM):>8.3f}  {'OK' if good else 'HATA'}")
+
+    # Ana yildiz DOYMUS: arac bir sonraki siraya gecip k'yi yine bulmali.
+    # Vega 14 mm f/2.8 15 s'de dolum kapasitesini 161 kat asiyor; bu
+    # senaryo teorik degil, planlanan cekimin ta kendisiydi.
+    r = run_case(0.25, times, saturate_main=True)
+    got = r["extinction_coefficient_k"]
+    used = r.get("star_rank_used")
+    good = abs(got - 0.25) < 0.03 and used == 1
+    ok &= good
+    print(f"{'ana yildiz DOYMUS -> ikinci siraya gec':<38} {0.25:>9.3f} "
+          f"{got:>9.4f} {abs(got - 0.25):>8.4f}  "
+          f"{'OK (sira ' + str(used) + ')' if good else 'HATA'}")
 
     print("-" * 74)
     print("SONUC:", "TUM TESTLER GECTI" if ok else "KALDI")

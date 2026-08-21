@@ -35,6 +35,7 @@ import numpy as np
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
+import starphot as sp
 from sensor_ptc import load_plane, raw_files
 
 
@@ -84,9 +85,26 @@ def main() -> int:
             continue
         exp = float(d.get("ShutterSpeedValue") or d["ExposureTime"])
         plane, _ = load_plane(p, args.channel, args.roi)
+        # PSF genisligi BU dizinin diyafragminda olculuyor.
+        #
+        # Onemli: Dizi B genelde kisilmis diyaframla cekilir (parlak
+        # yildiz doymasin diye) ve kisik diyaframda yildiz daha keskin
+        # olur. Faz 5'in istedigi FWHM ise ASIL cekim diyaframindaki
+        # deger — yani buradaki.
+        fwhms = []
+        for (py, px, pk) in sp.find_stars(plane, threshold_sigma=12.0,
+                                          max_stars=12):
+            if pk >= 0.95 * 15360:
+                continue
+            cy, cx = sp.centroid(plane, py, px)
+            f = sp.fit_gaussian_fwhm(plane, cy, cx)
+            if f is not None:
+                fwhms.append(f)
         rows.append({
             "file": p.name, "iso": iso, "exposure_s": exp,
             "median_adu": float(np.median(plane)),
+            "fwhm_px": float(np.median(fwhms)) if fwhms else None,
+            "star_count": len(fwhms),
             "temp_c": d.get("CameraTemperature"),
             "taken_at": d.get("CreateDate"),
         })
@@ -164,6 +182,14 @@ def main() -> int:
         print(f"\n  GOKYUZU FONU = {best:.4f} e-/piksel/saniye")
         print(f"  (Faz 5'in mu_sky girdisinin ALET tarafi; kadir/arcsec^2'ye")
         print(f"   cevrimi QE ve T olculdukten sonra, Faz 0.D'de yapilacak)")
+
+    all_fwhm = [r["fwhm_px"] for r in rows if r["fwhm_px"]]
+    if all_fwhm:
+        result["psf_fwhm_px_median"] = float(np.median(all_fwhm))
+        print(f"\n  PSF genisligi = {np.median(all_fwhm):.2f} px  "
+              f"(bu dizinin diyaframinda, {len(all_fwhm)} kare)")
+        print(f"  Faz 5 FWHM olarak BUNU bekliyor — Dizi B kisilmis")
+        print(f"  diyaframla cekildiyse oradaki deger daha keskin cikar.")
 
     for w in warn:
         print(f"  ! {w}")

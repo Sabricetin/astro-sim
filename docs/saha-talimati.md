@@ -341,7 +341,55 @@ Toplam: 24 + 9 = **33 kare**, poz süresi toplamı ~15 dakika.
 **Hedef: Vega.** Gecenin başında yüksekte, sonunda alçakta. Aynı yıldız,
 aynı ayar — değişen tek şey havanın kalınlığı.
 
-**Ayar sabit:** ISO 1600, 15 s, diyafram A dizisiyle aynı.
+### ⚠️ Bu dizi FARKLI ayarla çekilir
+
+Dizi A'nın ayarını buraya taşıma. Sebebi hesaplandı:
+
+> **Vega, 14 mm f/2.8 15 s ISO 1600'de dolum kapasitesini 161 kat aşıyor.**
+
+Doymuş yıldızın fotometrisi anlamsızdır — sinyali artmaz, o yüzden
+sönüm hiç ölçülemez. Planlanan ayarla çekseydin Dizi B'nin **tek bir
+karesi bile kullanılamazdı.**
+
+Geniş açıda bu sezgiye aykırı: 14 mm'de ölçek 54.8″/piksel, yani yıldızın
+tüm ışığı bir-iki piksele iniyor. Teleskopta yayılan ışık burada
+yığılıyor.
+
+### Ayarı sen bulacaksın — tahmin yok
+
+Diyaframı kısıp pozu kısaltacaksın, ama ne kadar? QE ve T henüz
+ölçülmediği için hesap ±2 kat belirsiz. O yüzden ölçerek bul:
+
+1. Vega'yı ortala, odağı yap.
+2. **f/11, 1/3 s, ISO 1600** ile tek kare çek.
+3. Sor:
+   ```bash
+   ./.venv/bin/python tools/check_star.py <kare.CR2>
+   ```
+
+| Sonuç | Yap |
+|---|---|
+| DOYMUS | bir durak kıs (f/13, f/16) |
+| %40–70 | **tamam, diziye başla** |
+| çok sönük | bir durak aç (f/9, f/8) |
+
+Bulduğun ayarı **gece boyunca değiştirme** — sönüm ölçümü akış
+*oranlarına* bakıyor, sabit bir ayar tüm sistematikleri götürüyor.
+
+### Yine de doyarsa
+
+Analiz aracı en parlak yıldız doymuşsa **bir sonraki sıraya geçiyor**
+ve aynı fiziksel yıldızı tüm karelerde takip ediyor (bağıl parlaklık
+sırası kare kare değişmez). Yani tek bir parlak yıldızın doyması gecenizi
+bitirmez — ama merkezdeki yıldızların *hepsi* doyarsa hiçbir şey
+yapamaz.
+
+### FWHM buradan değil, Dizi A'dan
+
+Kısılmış diyaframda yıldız haksız yere keskin çıkar. Faz 5'in istediği
+PSF genişliği **asıl çekim diyaframındaki** değer, yani Dizi A'nın.
+Araçlar bunu kendileri hallediyor; senin bir şey yapman gerekmiyor.
+
 Her durakta **5 kare.**
 
 ### 20/21 Ağustos gecesi (Mersin)

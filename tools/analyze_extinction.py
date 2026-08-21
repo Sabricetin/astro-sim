@@ -97,46 +97,78 @@ def main() -> int:
     print(f"hedef: RA {args.ra:.4f}  Dec {args.dec:.4f}")
     print(f"{len(paths)} kare\n")
 
-    rows = []
+    # --- 1. gecis: her karedeki merkezi yildizlari parlaklik sirasiyla topla
+    #
+    # Hedef yildizi dogrudan "en parlak" diye secmek calismaz: genis acida
+    # parlak yildizlar DOYAR. Vega 14 mm f/2.8 15 s'de dolum kapasitesini
+    # 161 kat asiyor ve doymus yildizin fotometrisi anlamsizdir.
+    #
+    # Cozum: yildizlarin BAGIL parlakligi kare kare degismedigi icin
+    # siralama kararlidir. Butun karelerde doymamis kalan en parlak
+    # SIRAYI bulup onu kullaniyoruz. Boylece her karede ayni fiziksel
+    # yildiz olculmus oluyor.
+    scans, skipped = [], []
     for p in paths:
         d = meta[p.name]
         exp = float(d.get("ShutterSpeedValue") or d["ExposureTime"])
         local = datetime.strptime(d["CreateDate"], "%Y:%m:%d %H:%M:%S")
-        # Poz ORTASI dogru zaman etiketi.
         utc = local - timedelta(hours=args.utc_offset) + timedelta(seconds=exp / 2)
         alt, az = altitude_of(args.ra, args.dec, utc, args.lat, args.lon, args.elev)
         if alt <= 3:
-            print(f"  ! {p.name}: hedef {alt:.1f} derecede — atlandi")
+            skipped.append(f"{p.name}: hedef {alt:.1f} derecede")
             continue
-
         plane, _ = load_plane(p, args.channel, roi=0)
         h, w = plane.shape
         peaks = sp.find_stars(plane, threshold_sigma=10.0, max_stars=40)
-        # Hedef cercevenin ortasinda: en parlak MERKEZDEKI yildiz.
         f = args.center_fraction
         cy0, cx0 = h * (1 - f) / 2, w * (1 - f) / 2
-        cy1, cx1 = h - cy0, w - cx0
-        central = [pk for pk in peaks if cy0 <= pk[0] <= cy1 and cx0 <= pk[1] <= cx1]
+        central = [
+            pk for pk in peaks
+            if cy0 <= pk[0] <= h - cy0 and cx0 <= pk[1] <= w - cx0
+        ]
         if not central:
-            print(f"  ! {p.name}: merkezde yildiz bulunamadi — atlandi")
+            skipped.append(f"{p.name}: merkezde yildiz yok")
             continue
-        y, x, peak = central[0]
-        if peak >= 0.95 * args.white_level:
-            print(f"  ! {p.name}: hedef DOYMUS (tepe {peak:.0f}) — atlandi. "
-                  f"Fotometri gecersiz olurdu.")
-            continue
+        scans.append({"path": p, "plane": plane, "central": central, "exp": exp,
+                      "utc": utc, "alt": alt, "az": az})
 
-        m = sp.measure_star(plane, y, x)
+    if not scans:
+        raise SystemExit("Hicbir karede merkezde yildiz bulunamadi.")
+
+    sat = 0.95 * args.white_level
+    ranks = min(len(sc["central"]) for sc in scans)
+    chosen = None
+    for r in range(ranks):
+        if all(sc["central"][r][2] < sat for sc in scans):
+            chosen = r
+            break
+    if chosen is None:
+        raise SystemExit(
+            "Butun karelerde merkezdeki yildizlarin HEPSI doymus.\n"
+            "  Fotometri yapilamaz. Diyaframi kis veya pozu kisalt;\n"
+            "  once tools/check_star.py ile tek kare kontrol et."
+        )
+    if chosen > 0:
+        print(f"  not: en parlak {chosen} yildiz doymus, {chosen + 1}. sira "
+              f"kullaniliyor (bagil siralama kare kare degismez)")
+
+    # --- 2. gecis: secilen sirayi butun karelerde olc
+    rows = []
+    for sc in scans:
+        y, x, peak = sc["central"][chosen]
+        m = sp.measure_star(sc["plane"], y, x)
         if m is None:
-            print(f"  ! {p.name}: olcum basarisiz — atlandi")
+            skipped.append(f"{sc['path'].name}: olcum basarisiz")
             continue
-        # Poz suresine normalize: aleti kadir saniyede ADU uzerinden.
-        mag = -2.5 * np.log10(m["flux_adu"] / exp)
-        X = airmass_kasten_young(alt)
-        rows.append({"file": p.name, "utc": utc.isoformat(), "exposure_s": exp,
-                     "altitude_deg": alt, "azimuth_deg": az, "airmass": X,
+        mag = -2.5 * np.log10(m["flux_adu"] / sc["exp"])
+        X = airmass_kasten_young(sc["alt"])
+        rows.append({"file": sc["path"].name, "utc": sc["utc"].isoformat(),
+                     "exposure_s": sc["exp"], "altitude_deg": sc["alt"],
+                     "azimuth_deg": sc["az"], "airmass": X,
                      "flux_adu": m["flux_adu"], "fwhm_px": m["fwhm_px"],
                      "peak_adu": float(peak), "instrumental_mag": float(mag)})
+    for sk in skipped:
+        print(f"  ! {sk} — atlandi")
 
     if len(rows) < 4:
         raise SystemExit(f"Uydurmak icin yetersiz kare ({len(rows)}).")
@@ -202,6 +234,7 @@ def main() -> int:
         "residual_rms_mag": rms,
         "airmass_range": [float(X.min()), float(X.max())],
         "psf_fwhm_px_median": float(np.median(fwhms)) if fwhms else None,
+        "star_rank_used": chosen,
         "frames": rows,
         "warnings": warn,
     }

@@ -88,8 +88,13 @@ def main() -> int:
     rows = [
         ("k", "sonum katsayisi", "kadir/X",
          ext and ext["extinction_coefficient_k"], "0.B Dizi B"),
+        # FWHM tercihen Dizi A'dan: asil cekim diyaframindaki deger o.
+        # Dizi B kisilmis diyaframla cekilir (parlak yildiz doymasin
+        # diye) ve orada yildiz haksiz yere keskin cikar.
         ("FWHM", "yildiz profili", "px",
-         ext and ext.get("psf_fwhm_px_median"), "0.B Dizi B"),
+         (sky and sky.get("psf_fwhm_px_median"))
+         or (ext and ext.get("psf_fwhm_px_median")),
+         "0.B Dizi A (asil diyafram)"),
         ("I_d", "karanlik akim", "e-/px/s", dark_e, "0.B Dizi C"),
         ("sky_inst", "fon (alet)", "e-/px/s",
          sky and sky.get("sky_e_per_px_per_s"), "0.B Dizi A"),
@@ -106,7 +111,8 @@ def main() -> int:
 
     summary = {
         "extinction_coefficient_k": ext and ext["extinction_coefficient_k"],
-        "psf_fwhm_px": ext and ext.get("psf_fwhm_px_median"),
+        "psf_fwhm_px": (sky and sky.get("psf_fwhm_px_median"))
+        or (ext and ext.get("psf_fwhm_px_median")),
         "dark_current_e_per_px_per_s": dark_e,
         "sky_instrumental_e_per_px_per_s": sky and sky.get("sky_e_per_px_per_s"),
         "iso": args.iso, "gain_used": gain,
