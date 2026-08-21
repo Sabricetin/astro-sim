@@ -300,6 +300,43 @@ katmanında sesli bir hataya dönüşüyor.
 
 ---
 
+## Yıldız tanıma ✅ (22 Ağustos 2026)
+
+`tools/identify_stars.py` — karedeki yıldızları BSC5 ile eşleştirir.
+
+**Neden gerekliydi:** Fotometri bir yıldızın kaç ADU verdiğini söyler,
+ama sıfır noktası için **gerçek kadiri** lazım. *"Kullanıcı Vega'yı
+ortaladı"* varsayımı Vega doyduğunda çöküyordu.
+
+**Yaklaşım — sıfırdan plate solve değil.** Araç zaten nereye
+bakıldığını (hedef), ne zaman (EXIF), nereden (konum) ve hangi ölçekte
+(odak + piksel adımı) biliyor. Bilinmeyen tek şey **dönme açısı** ve
+merkezin birkaç derecelik kayması. Kaba tarama + en küçük kareler
+iyileştirmesi yetiyor.
+
+**Yol boyunca yakalanan birim tuzağı:** `starphot` tek CFA kanalında
+çalışıyor (`cfa[oy::2, ox::2]`), o düzlemde pikseller sensörün **iki
+katı** aralıklı. 14 mm'de sensör ölçeği 54.8″/px ama G1 düzleminde
+109.6″/px. Bu çarpanı unutmak ölçeği iki kat yanlış yapar ve **hiçbir
+yıldız eşleşmez** — sessiz bir hata değil, gürültülü bir başarısızlık,
+o yüzden şanslıyız.
+
+**Doğrulama:** Gerçek BSC5 yıldızlarıyla üretilmiş 14 sentetik senaryo.
+Yıldız konumları uydurma değil, katalogdan geliyor — yani test sadece
+matematiği değil katalog bağlantısını da sınıyor.
+
+| Senaryo grubu | Sonuç |
+|---|---|
+| 5 farklı dönme açısı + aynalanmış kare | ✅ |
+| Orion (yoğun), Pegasus (seyrek), kutup, güney | ✅ |
+| Doymuş yıldız, eksik yıldız, sahte tepe, bozuk odak | ✅ |
+
+**14 senaryoda sıfır yanlış eşleştirme**, dönme açısı 0.01–0.02°
+hassasiyetle, konum RMS 0.15–0.76 piksel.
+
+Sönüm aracına bağlandı: hedef doysa bile ölçülen yıldız tanınıyor ve
+ZP kurtuluyor.
+
 ## Sıradaki
 
 | Faz | Durum | Engel |

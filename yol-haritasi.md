@@ -420,10 +420,22 @@ Kademe 2 otuz saniyelik iş, gece gerektirmiyor. Kullanıcıların çoğu
 ve okuma gürültüsü ölçmüş. İçeri alınmalı — ve **lisans durumu ticari
 dağıtımdan önce netleşmeli.** BSC5'inkiyle aynı kategoride açık madde.
 
-**Yıldız tanıma.** Kademe 2'nin çalışması için program, kullanıcının
-karesindeki yıldızın hangisi olduğunu bilmeli. Avantaj: araç zaten
-nereye, ne zaman ve nereden bakıldığını biliyor — sıfırdan plate solve
-değil, kısıtlı eşleştirme. Yine de gerçek iş.
+**Yıldız tanıma.** ✅ **Yapıldı (22 Ağustos 2026)** —
+`tools/identify_stars.py`. Kısıtlı eşleştirme yaklaşımı işe yaradı:
+merkez, ölçek ve zaman zaten bilindiği için bilinmeyen tek şey dönme
+açısı kalıyor.
+
+Gerçek BSC5 yıldızlarıyla üretilmiş 14 sentetik senaryoda doğrulandı —
+farklı dönme açıları, aynalanmış kare, yoğun/seyrek/kutup/güney
+alanları, doymuş yıldız, eksik yıldız, sahte tepe, bozuk odak.
+**Sıfır yanlış eşleştirme**, dönme açısı 0.01° hassasiyetle.
+
+Sönüm aracına bağlandı: hedef doysa bile ölçülen yıldız katalogda
+tanınıyor ve sıfır noktası kurtuluyor. Önceden bu durumda ZP geçersiz
+sayılıyordu.
+
+Kalan iş Kademe 2'nin arayüz tarafı: kullanıcı kare yükler, uygulama
+ZP/μ_sky/FWHM'i çıkarır.
 
 **Bu iki iş bitmeden radyometri tek kullanıcılıktır.** Faz 1–4 değil.
 

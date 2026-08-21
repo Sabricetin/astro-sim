@@ -33,7 +33,26 @@ data/faz0b/
 | `analyze_darks.py` | Dizi C | **I_d** — karanlık akım, e⁻/px/s |
 | `analyze_sky.py` | Dizi A | **fon** e⁻/px/s + doğrusallık + ISO çapraz kontrolü |
 | `analyze_extinction.py` | Dizi B | **k** — sönüm katsayısı + **FWHM** yan ürün |
-| `analyze_field_night.py` | hepsi | dördünü tek defterde toplar |
+| `identify_stars.py` | herhangi bir kare | **hangi yıldız hangisi** — katalogla eşleştirir |
+| `analyze_field_night.py` | hepsi | hepsini tek defterde toplar |
+
+### Yıldız tanıma niye gerekli
+
+Fotometri bir yıldızın kaç ADU verdiğini söyler, ama sıfır noktası için
+o yıldızın **gerçek kadiri** lazım. *"Kullanıcı Vega'yı ortaladı"*
+varsayımı Vega doyduğunda çöküyor — o zaman başka bir yıldız ölçülüyor
+ve kimliği bilinmiyor.
+
+Bu **sıfırdan plate solve değil.** Aracın elinde zaten çok şey var:
+nereye bakıldığı, ne zaman, nereden, hangi ölçekte. Bilinmeyen tek şey
+**dönme açısı**. O yüzden hızlı ve güvenilir.
+
+Tek başına da kullanılabilir:
+
+```bash
+./.venv/bin/python tools/identify_stars.py kare.CR2 \
+  --ra 279.235 --dec 38.784 --focal 14 --pixel-pitch 3.72
+```
 
 Sıra tesadüf değil: karanlık akım önce ölçülür, çünkü fon hesabı onu
 çıkarmak için kullanır.
@@ -47,6 +66,7 @@ kazanılabildiği gösterildi:
 ./.venv/bin/python tools/test_starphot.py      # fotometri çekirdeği
 ./.venv/bin/python tools/test_extinction.py    # k geri kazanımı
 ./.venv/bin/python tools/test_field_tools.py   # I_d ve fon
+./.venv/bin/python tools/test_identify.py      # yıldız tanıma
 ./.venv/bin/python tools/test_ptc_math.py      # kazanç
 ./.venv/bin/python tools/test_drift_correction.py
 ```
@@ -60,6 +80,7 @@ Doğrulanan değerler:
 | Karanlık akım | %1.2 |
 | Gökyüzü fonu | %0.05 |
 | Yıldız akışı | %0.3 |
+| Yıldız tanıma | 14 senaryo, **0 yanlış eşleştirme** |
 
 Gerçek gökyüzünde "doğru cevap" yok — o yüzden araçların doğruluğu
 ancak burada sınanabilir.

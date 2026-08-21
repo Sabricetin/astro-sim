@@ -30,6 +30,7 @@ from scipy.optimize import least_squares
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
+import identify_stars as ident
 import starphot as sp
 from sensor_ptc import load_plane, raw_files
 
@@ -88,6 +89,13 @@ def main() -> int:
     ap.add_argument("--center-fraction", type=float, default=0.5,
                     help="hedefin arandigi merkezi bolge orani")
     ap.add_argument("--white-level", type=float, default=15360.0)
+    ap.add_argument("--no-identify", action="store_true",
+                    help="katalogla eslestirmeyi kapat; olculen yildizin "
+                         "hedef oldugu VARSAYILIR")
+    ap.add_argument("--focal", type=float, default=None,
+                    help="odak, mm — eslestirme icin")
+    ap.add_argument("--pixel-pitch", type=float, default=None,
+                    help="piksel adimi, um — eslestirme icin")
     ap.add_argument("--out", type=Path, default=Path("data/faz0b/sonum"))
     args = ap.parse_args()
 
@@ -156,6 +164,48 @@ def main() -> int:
         print(f"  not: en parlak {chosen} yildiz doymus, {chosen + 1}. sira "
               f"kullaniliyor (bagil siralama kare kare degismez)")
 
+    # --- Olculen yildizi katalogla tani ---
+    #
+    # Sifir noktasi icin yildizin GERCEK kadiri lazim. "Kullanici hedefi
+    # ortaladi" varsayimi hedef doydugunda cokuyor: o zaman baska bir
+    # yildiz olculuyor ve kimligi bilinmiyor.
+    #
+    # Tanima sifirdan plate solve degil — merkez, olcek ve zaman zaten
+    # biliniyor, bilinmeyen tek sey donme acisi.
+    identified = None
+    if not args.no_identify and args.focal and args.pixel_pitch:
+        ref = max(scans, key=lambda sc: sc["alt"])   # en yuksek = en temiz
+        sol, detected, cat = ident.identify(
+            ref["plane"], args.ra, args.dec, args.focal, args.pixel_pitch,
+            white_level=args.white_level)
+        if sol is not None and sol.match_count >= 4:
+            ty, tx, _ = ref["central"][chosen]
+            best_d, best_j = 1e9, None
+            for i, j, _ in sol.matches:
+                d = np.hypot(detected[i]["x"] - tx, detected[i]["y"] - ty)
+                if d < best_d:
+                    best_d, best_j = d, j
+            if best_j is not None and best_d < 8.0:
+                identified = {
+                    "hr": int(cat.hr[best_j]),
+                    "vmag": float(cat.vmag[best_j]),
+                    "bv": None if np.isnan(cat.bv[best_j])
+                    else float(cat.bv[best_j]),
+                    "match_count": sol.match_count,
+                    "rms_px": sol.rms_px,
+                }
+                print(f"  olculen yildiz TANINDI: HR {identified['hr']}, "
+                      f"V={identified['vmag']:.2f}"
+                      + (f", B-V={identified['bv']:.2f}"
+                         if identified["bv"] is not None else "")
+                      + f"  ({sol.match_count} yildiz eslesti, "
+                        f"RMS {sol.rms_px:.2f} px)")
+            else:
+                print("  ! olculen yildiz katalogda eslestirilemedi")
+        else:
+            print("  ! kare katalogla cozulemedi — sifir noktasi icin "
+                  "hedefin dogru oldugu varsayilacak")
+
     # --- 2. gecis: secilen sirayi butun karelerde olc
     rows = []
     for sc in scans:
@@ -222,15 +272,20 @@ def main() -> int:
         print(f"  ! Dizi B icinde diyafram degismis: {sorted(_fnums)}. "
               f"Sifir noktasi tasinamaz, gecersiz sayiliyor.")
 
+    # Tanima calistiysa GERCEK kadir kullanilir; yoksa kullanicinin
+    # verdigi hedef kadiri.
+    zp_mag = identified["vmag"] if identified else args.target_mag
+    zp_source = (f"HR {identified['hr']} (tanindi)" if identified
+                 else "hedef varsayildi")
     zp = None
-    if args.target_mag is not None and _zp_fnum is not None:
-        zp = float(args.target_mag - m0)
+    if zp_mag is not None and _zp_fnum is not None:
+        zp = float(zp_mag - m0)
 
     print(f"\n  SONUM KATSAYISI  k = {k:.4f} +- {k_err:.4f} kadir / hava kutlesi")
     print(f"  atmosfer disi     m0 = {m0:.4f}")
     if zp is not None:
         print(f"  SIFIR NOKTASI     ZP = {zp:.4f}  "
-              f"(hedef V={args.target_mag}, f/{_zp_fnum:g}'de)")
+              f"(V={zp_mag:.2f}, {zp_source}, f/{_zp_fnum:g}'de)")
         print(f"     m_yerdeki = m_alet + ZP")
         print(f"     Bu sayi QE, lens verimi ve aciklik alanini birlikte")
         print(f"     tasiyor. Gokyuzu fonunu kadir/arcsec^2'ye cevirmek icin")
@@ -251,11 +306,12 @@ def main() -> int:
     if k > 0.70:
         warn.append("k cok buyuk (>0.70) — pus/bulut veya isik kirliligi "
                     "fotometriye karisiyor olabilir.")
-    if chosen > 0 and zp is not None:
-        warn.append(f"SIFIR NOKTASI GECERSIZ: hedef yildiz doymus oldugu icin "
-                    f"{chosen + 1}. siradaki BASKA bir yildiz olculdu ve onun "
-                    f"gercek kadiri bilinmiyor. k gecerli, ZP degil. "
-                    f"Sifir noktasi icin hedefin doymadigi bir kare gerekli.")
+    if chosen > 0 and zp is not None and identified is None:
+        warn.append(f"SIFIR NOKTASI GECERSIZ: hedef doymus oldugu icin "
+                    f"{chosen + 1}. siradaki BASKA bir yildiz olculdu, "
+                    f"kimligi de belirlenemedi. k gecerli, ZP degil. "
+                    f"--focal ve --pixel-pitch verirsen katalogla "
+                    f"eslestirmeyi dener.")
     for w in warn:
         print(f"  ! {w}")
 
@@ -271,7 +327,10 @@ def main() -> int:
         "extinction_coefficient_k": float(k),
         "k_uncertainty": k_err,
         "zero_point_m0": float(m0),
-        "photometric_zero_point": zp if chosen == 0 else None,
+        # Hedef doymus olsa bile, olculen yildiz TANINDIYSA sifir
+        # noktasi gecerli — gercek kadiri katalogdan biliniyor.
+        "photometric_zero_point": zp if (chosen == 0 or identified) else None,
+        "identified_star": identified,
         # ZP HANGI DIYAFRAMDA olculdugu kaydedilmeli. Baska diyaframa
         # tasinirken duzeltme sart: aciklik alani 1/N^2 ile degisir.
         # f/11'de olculen ZP'yi f/2.8'e duzeltmeden uygulamak 2.97

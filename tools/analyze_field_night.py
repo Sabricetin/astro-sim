@@ -55,8 +55,12 @@ def main() -> int:
     ap.add_argument("--pixel-pitch-um", type=float, default=3.72)
     ap.add_argument("--focal-length-mm", type=float, default=14.0,
                     help="Dizi A'nin odak uzunlugu")
+    ap.add_argument("--focal-length-b-mm", type=float, default=None,
+                    help="Dizi B'nin odak uzunlugu (verilmezse A ile ayni)")
     args = ap.parse_args()
 
+    if args.focal_length_b_mm is None:
+        args.focal_length_b_mm = args.focal_length_mm
     out = args.root / "sonuc"
     out.mkdir(parents=True, exist_ok=True)
     gain = GAINS[args.iso]
@@ -78,6 +82,11 @@ def main() -> int:
                                       "--elev", str(args.elev),
                                       "--utc-offset", str(args.utc_offset),
                                       "--target-mag", str(args.target_mag),
+                                      # Tanima: olculen yildizin gercek
+                                      # kadirini katalogdan al. Hedef doymus
+                                      # olsa bile sifir noktasi kurtulur.
+                                      "--focal", str(args.focal_length_b_mm),
+                                      "--pixel-pitch", str(args.pixel_pitch_um),
                                       "--out", str(out / "sonum")])
     ext = load(out / "sonum.json")
     zp = ext.get("photometric_zero_point") if ext else None
@@ -115,7 +124,10 @@ def main() -> int:
         ("sky_inst", "fon (alet)", "e-/px/s",
          sky and sky.get("sky_e_per_px_per_s"), "0.B Dizi A"),
         ("ZP", "fotometrik sifir nk", "kadir",
-         ext and ext.get("photometric_zero_point"), "0.B Dizi B"),
+         ext and ext.get("photometric_zero_point"),
+         "0.B Dizi B" + (
+             f" [HR {ext['identified_star']['hr']}]"
+             if ext and ext.get("identified_star") else "")),
         ("mu_sky", "fon (mutlak)", "kadir/as^2",
          sky and sky.get("sky_mag_per_sq_arcsec"), "0.B A+B birlikte"),
     ]
