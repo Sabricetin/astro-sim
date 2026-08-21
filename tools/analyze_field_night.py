@@ -50,6 +50,11 @@ def main() -> int:
     ap.add_argument("--elev", type=float, default=0.0)
     ap.add_argument("--utc-offset", type=float, default=3.0)
     ap.add_argument("--iso", type=int, default=1600)
+    ap.add_argument("--target-mag", type=float, default=0.03,
+                    help="Dizi B'deki hedef yildizin V kadiri (Vega: 0.03)")
+    ap.add_argument("--pixel-pitch-um", type=float, default=3.72)
+    ap.add_argument("--focal-length-mm", type=float, default=14.0,
+                    help="Dizi A'nin odak uzunlugu")
     args = ap.parse_args()
 
     out = args.root / "sonuc"
@@ -64,25 +69,33 @@ def main() -> int:
     dark = load(out / "karanlik.json")
     dark_e = dark["dark_current_e_per_px_per_s"] if dark else None
 
-    # 2. Gokyuzu fonu + dogrusallik + ISO capraz kontrolu.
-    for folder, tag in [("A1-fon-poz", "fon-poz"), ("A2-fon-iso", "fon-iso")]:
-        if (args.root / folder).is_dir():
-            extra = ["--dark-current", str(dark_e)] if dark_e is not None else []
-            run("analyze_sky.py", ["--frames", str(args.root / folder)]
-                + sum([["--gain-iso", f"{k}={v}"] for k, v in GAINS.items()], [])
-                + extra + ["--out", str(out / tag)])
-
-    # 3. Sonum katsayisi + PSF.
+    # 2. Sonum katsayisi + sifir noktasi + PSF.
+    #
+    # Fon hesabindan ONCE: mutlak fon parlakligi sifir noktasina bagli.
     if (args.root / "B-sonum").is_dir():
         run("analyze_extinction.py", ["--frames", str(args.root / "B-sonum"),
                                       "--lat", str(args.lat), "--lon", str(args.lon),
                                       "--elev", str(args.elev),
                                       "--utc-offset", str(args.utc_offset),
+                                      "--target-mag", str(args.target_mag),
                                       "--out", str(out / "sonum")])
+    ext = load(out / "sonum.json")
+    zp = ext.get("photometric_zero_point") if ext else None
+
+    # 3. Gokyuzu fonu + dogrusallik + ISO capraz kontrolu.
+    scale = 206.265 * args.pixel_pitch_um / args.focal_length_mm
+    for folder, tag in [("A1-fon-poz", "fon-poz"), ("A2-fon-iso", "fon-iso")]:
+        if (args.root / folder).is_dir():
+            extra = ["--dark-current", str(dark_e)] if dark_e is not None else []
+            if zp is not None:
+                extra += ["--zero-point", str(zp),
+                          "--arcsec-per-pixel", f"{scale:.4f}"]
+            run("analyze_sky.py", ["--frames", str(args.root / folder)]
+                + sum([["--gain-iso", f"{k}={v}"] for k, v in GAINS.items()], [])
+                + extra + ["--out", str(out / tag)])
 
     # --- Ozet ---
     sky = load(out / "fon-poz.json") or load(out / "fon-iso.json")
-    ext = load(out / "sonum.json")
 
     print(f"\n{'=' * 70}\n  FAZ 5 ICIN KALIBRASYON DEFTERI\n{'=' * 70}")
     rows = [
@@ -98,16 +111,19 @@ def main() -> int:
         ("I_d", "karanlik akim", "e-/px/s", dark_e, "0.B Dizi C"),
         ("sky_inst", "fon (alet)", "e-/px/s",
          sky and sky.get("sky_e_per_px_per_s"), "0.B Dizi A"),
+        ("ZP", "fotometrik sifir nk", "kadir",
+         ext and ext.get("photometric_zero_point"), "0.B Dizi B"),
+        ("mu_sky", "fon (mutlak)", "kadir/as^2",
+         sky and sky.get("sky_mag_per_sq_arcsec"), "0.B A+B birlikte"),
     ]
     for sym, name, unit, val, src in rows:
         got = f"{val:.5f}" if isinstance(val, (int, float)) else "— OLCULEMEDI"
         print(f"  {sym:<9} {name:<18} {got:>14} {unit:<10} {src}")
 
-    print(f"\n  Hala eksik (bu gece olculemez):")
-    print(f"  {'T':<9} {'lens aktarim verimi':<18} {'':>14} {'-':<10} 0.D")
-    print(f"  {'QE':<9} {'kuantum verimi':<18} {'':>14} {'e-/foton':<10} 0.D")
+    print(f"\n  Hala eksik:")
     print(f"  {'dV_G':<9} {'bant duzeltmesi':<18} {'':>14} {'kadir':<10} 0.D")
-    print(f"  {'mu_sky':<9} {'mutlak fon':<18} {'':>14} {'kadir/as^2':<10} 0.C (VIIRS)")
+    print(f"\n  QE ve T ayri ayri OLCULMUYOR — ZP ikisini birlikte tasiyor.")
+    print(f"  Zincirin ihtiyaci zaten carpimlari; ayirmak laboratuvar isi.")
 
     summary = {
         "extinction_coefficient_k": ext and ext["extinction_coefficient_k"],
@@ -115,6 +131,8 @@ def main() -> int:
         or (ext and ext.get("psf_fwhm_px_median")),
         "dark_current_e_per_px_per_s": dark_e,
         "sky_instrumental_e_per_px_per_s": sky and sky.get("sky_e_per_px_per_s"),
+        "photometric_zero_point": ext and ext.get("photometric_zero_point"),
+        "sky_mag_per_sq_arcsec": sky and sky.get("sky_mag_per_sq_arcsec"),
         "iso": args.iso, "gain_used": gain,
         "site": {"lat": args.lat, "lon": args.lon, "elev_m": args.elev},
     }

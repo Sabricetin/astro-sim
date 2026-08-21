@@ -32,7 +32,29 @@ const lensTransmissionMissing = MissingQuantity(
       'Faz 5\'in cikis kriteri %15; bu tek basina onu dusurebilir.',
 );
 
+/// Fotometrik sifir noktasi.
+///
+/// QE ve T'nin yerini alan tek buyukluk. Ayri ayri olculemezler ama
+/// zincirin ihtiyaci zaten carpimlari.
+const zeroPointMissing = MissingQuantity(
+  name: 'fotometrik sifir noktasi',
+  symbol: 'ZP',
+  unit: 'kadir',
+  comesFrom: 'Faz 0.B Dizi B — bilinen kadirde yildizin olculmesi',
+  why:
+      'Kuantum verimi, lens aktarim verimi ve aciklik alani tek bir '
+      'sayida birlesir; zincirin ihtiyaci zaten carpimlaridir ve o '
+      'carpim TEK bir olcumle elde edilir: kadiri bilinen bir yildizin '
+      'kac ADU verdigi. Ucunu ayri ayri kestirmeye calismak, hicbiri '
+      'yayinlanmadigi icin uc ayri uydurma demek olurdu.',
+);
+
 /// Sensorun kuantum verimi.
+///
+/// **Artik dogrudan kullanilmiyor** — [zeroPointMissing] onun ve lens
+/// veriminin yerine gecti. Tanim geriye donuk uyumluluk ve belgeleme
+/// icin duruyor.
+
 const quantumEfficiencyMissing = MissingQuantity(
   name: 'kuantum verimi',
   symbol: 'QE',
@@ -58,6 +80,18 @@ const bandCorrectionMissing = MissingQuantity(
       'ortalamada kaybolur.',
 );
 
+/// Yildizin renk indeksi — katalog verisi, kalibrasyon degil.
+const colorIndexMissing = MissingQuantity(
+  name: 'yildizin renk indeksi',
+  symbol: 'B-V',
+  unit: 'kadir',
+  comesFrom: 'yildiz katalogu',
+  why:
+      'Bant duzeltmesi renge bagli. Rengi bilinmeyen yildiz icin '
+      'ortalama bir renk varsaymak, duzeltmenin duzeltmeye calistigi '
+      'hatayi geri getirir.',
+);
+
 /// Karanlik akim.
 const darkCurrentMissing = MissingQuantity(
   name: 'karanlik akim',
@@ -75,19 +109,21 @@ const skyBackgroundMissing = MissingQuantity(
   name: 'Ay\'siz gokyuzu fon parlakligi',
   symbol: 'mu_sky',
   unit: 'kadir / yay saniyesi kare',
-  comesFrom: 'Faz 0.C — VIIRS uydu verisi, cekim noktasinin koordinatiyla',
+  comesFrom: 'Faz 0.B — Dizi A fonu + Dizi B sifir noktasi',
   why:
-      'Bortle 1 ile Bortle 9 arasinda 40 kat fark var. Sinif elle '
-      'secilirse kullanicinin tahminine dayanir; gozle Bortle kestirmek '
-      'iki sinif sasar, bu da 2.5 kat fon demektir.',
+      'Bortle 1 ile Bortle 9 arasinda 40 kat fark var ve gozle Bortle '
+      'kestirmek iki sinif sasar — 2.5 kat fon demektir. VIIRS bir '
+      'secenekti ama uydu YUKARI cikan isigi olcer, biz yerden yukari '
+      'bakinca goruneni istiyoruz; aradaki donusum modeli %20-30 '
+      'sacilma tasiyor. Kullanicinin kendi karesindeki yildizdan '
+      'olcmek hem daha dogru hem tek gecede bitiyor.',
 );
 
 /// Zincirin bekledigi butun buyuklukler. Arayuz "daha ne lazim"
 /// diye sordugunda bu liste cevaptir.
 const allMissingQuantities = <MissingQuantity>[
   extinctionCoefficientMissing,
-  lensTransmissionMissing,
-  quantumEfficiencyMissing,
+  zeroPointMissing,
   bandCorrectionMissing,
   darkCurrentMissing,
   skyBackgroundMissing,

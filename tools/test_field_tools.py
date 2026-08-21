@@ -174,6 +174,48 @@ def main() -> int:
     print(f"{'fon dogrusal degil -> uyari':<40} {'':>9} {'':>9} {'':>8}  "
           f"{'OK' if warned else 'HATA (uyarmadi)'}")
 
+    print("\nMUTLAK FON PARLAKLIGI (sifir noktasindan)")
+    print(f"{'senaryo':<40} {'gercek':>9} {'bulunan':>9} {'hata':>8}  sonuc")
+    print("-" * 78)
+    # Ileri yon: mu -> ADU/s.  m_alet = mu - ZP,  ADU/s = omega * 10^(-0.4 m_alet)
+    SCALE = 54.8
+    OMEGA = SCALE ** 2
+    for ZP, mu_true in [(20.0, 21.5), (20.0, 19.0), (22.5, 20.5)]:
+        m_inst = mu_true - ZP
+        adu_per_s = OMEGA * 10 ** (-0.4 * m_inst)
+        # Bu ADU/s'yi uretecek elektron hizi
+        rate_e = adu_per_s * gains[1600]
+        store, metas = build_sky(rate_e, [1600], [5, 10, 15, 20, 30, 60], gains)
+        run(sky, ["x", "--frames", "."] +
+            sum([["--gain-iso", g] for g in gain_args], []) +
+            ["--zero-point", str(ZP), "--arcsec-per-pixel", str(SCALE),
+             "--out", "/tmp/_sky", "--roi", "0"], store, metas)
+        got = json.loads(Path("/tmp/_sky.json").read_text())["sky_mag_per_sq_arcsec"]
+        err = abs(got - mu_true)
+        good = err < 0.02
+        ok &= good
+        print(f"{'ZP=' + str(ZP) + ', mu=' + str(mu_true):<40} {mu_true:>9.2f} "
+              f"{got:>9.3f} {err:>8.3f}  {'OK' if good else 'HATA'}")
+
+    # Sifir noktasi 1 kadir kayarsa fon da tam 1 kadir kaymali.
+    # Zincirin dogru sadelestigini gosterir.
+    vals = []
+    for ZP in [20.0, 21.0]:
+        adu_per_s = OMEGA * 10 ** (-0.4 * (20.5 - 20.0))
+        store, metas = build_sky(adu_per_s * gains[1600], [1600],
+                                 [5, 10, 15, 20, 30, 60], gains)
+        run(sky, ["x", "--frames", "."] +
+            sum([["--gain-iso", g] for g in gain_args], []) +
+            ["--zero-point", str(ZP), "--arcsec-per-pixel", str(SCALE),
+             "--out", "/tmp/_sky", "--roi", "0"], store, metas)
+        vals.append(json.loads(Path("/tmp/_sky.json").read_text())
+                    ["sky_mag_per_sq_arcsec"])
+    shift = vals[1] - vals[0]
+    good = abs(shift - 1.0) < 0.005
+    ok &= good
+    print(f"{'ZP 1 kadir kayinca fon da 1 kadir kayiyor':<40} {1.0:>9.2f} "
+          f"{shift:>9.3f} {abs(shift - 1):>8.3f}  {'OK' if good else 'HATA'}")
+
     print("-" * 78)
     print("SONUC:", "TUM TESTLER GECTI" if ok else "KALDI")
     return 0 if ok else 1

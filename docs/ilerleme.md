@@ -262,6 +262,30 @@ durumu doğru anlatır ve ne yapması gerektiğini söyler.
 hiçbir sayı üretmiyor — hava kütlesi satırı bile çıkmıyor. Widget
 testleri bunu doğruluyor.
 
+### Defter yediden altıya indi (22 Ağustos 2026)
+
+Çekim planı kuru provaya sokulunca (bkz. aşağıda) referans sorunu da
+görüldü ve tasarım değişti: **QE ve T ayrı ayrı ölçülmüyor, yerlerine
+tek bir fotometrik sıfır noktası (ZP) geçti.**
+
+Gerekçe: ikisi de tek başlarına ölçülemez — üretici yayınlamaz,
+laboratuvar gerekir. Ama zincirin ihtiyacı zaten çarpımlarıdır ve o
+çarpım **tek bir ölçümle** elde edilir: kadiri bilinen bir yıldızın kaç
+ADU verdiği. Üçünü ayrı ayrı kestirmek üç ayrı uydurma demek olurdu.
+
+Aynı ZP gökyüzü fonuna da uygulanınca `μ_sky` mutlak ölçeğe oturuyor —
+**VIIRS'e gerek kalmadan.** VIIRS elenmedi, yeri değişti: zorunlu
+referans değil, isteğe bağlı çapraz kontrol.
+
+**Doğrulama:** ZP yolu, daha önce elle hesaplanmış uçtan uca değerleri
+(yıldız 24.2 e⁻/s, fon 0.851 e⁻/px/s) **birebir** yeniden üretti. İki
+bağımsız yol aynı sayıya varıyor.
+
+Testte ZP elle yazılmadı, `predictedZeroPoint()` ile QE ve T'den
+türetildi — böylece o fonksiyon da sınanmış oluyor. Gerçekte yön
+terstir: ZP ölçülür, QE ve T'nin doğruluğu ondan anlaşılır. Faz 0.D'nin
+işi tam olarak bu karşılaştırma.
+
 ### Korumanın gerçekten çalıştığı doğrulandı
 
 `extinction.dart`'a "geçici, sonra ölçümle değiştiririz" tarzı klasik

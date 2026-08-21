@@ -2,16 +2,20 @@
 ///
 /// Zincirin tamami:
 ///
-///     kadir -> foton akisi        (yayinlanmis sabit, hesaplanir)
-///           -> bant duzeltmesi    (OLCULECEK: dV_G)
-///           -> atmosferik sonum   (OLCULECEK: k)
-///           -> optik toplama      (geometri × OLCULECEK: T)
-///           -> kuantum verimi     (OLCULECEK: QE)
+///     kadir -> bant duzeltmesi    (OLCULECEK: dV_G)
+///           -> atmosferik sonum    (OLCULECEK: k)
+///           -> sifir noktasi       (OLCULECEK: ZP)
 ///           -> elektron / saniye
 ///
-/// Alti halkanin ikisi hesaplanabiliyor, dordu olcum bekliyor. Bu
-/// yuzden [starElectronRate] bugun **sayi dondurmez** — hangi dort
-/// buyuklugun eksik oldugunu dondurur.
+/// **Sifir noktasi neden QE ve T'nin yerine gecti:** ikisi de tek
+/// baslarina olculemez (uretici yayinlamaz, laboratuvar gerekir) ama
+/// zincirin ihtiyaci zaten carpimlaridir. Kadiri bilinen bir yildizin
+/// kac ADU verdigi TEK olcumle o carpimi veriyor — ustelik aciklik
+/// alanini ve poz normalizasyonunu da icine alarak. Uc buyuklugu ayri
+/// ayri kestirmek uc ayri uydurma demek olurdu.
+///
+/// ZP kadir olceginde tanimli:  m_yerdeki = m_alet + ZP,
+/// m_alet = -2.5 log10(ADU / saniye).
 ///
 /// Eksikler birikerek tasinir: ilk eksikte durup digerlerini gizlemez.
 /// Sebep pratik — kullaniciya "once sunu olc" deyip her seferinde bir
@@ -154,3 +158,67 @@ List<MissingQuantity> pendingCalibration({
   if (darkCurrent == null) darkCurrentMissing,
   if (skyBackground == null) skyBackgroundMissing,
 ];
+
+/// Aleti kadirden ADU/saniyeye: `ADU/s = 10^(-0.4 · m_alet)`.
+double aduPerSecondFromInstrumentalMagnitude(double instrumentalMag) =>
+    _pow10(-0.4 * instrumentalMag);
+
+double _pow10(double x) => math.pow(10, x).toDouble();
+
+/// Bir yildizin sensorde urettigi ADU hizi, ADU/saniye.
+///
+/// Sifir noktasi tabanli yol. [starElectronRate]'in yerini alir:
+/// QE, lens verimi ve aciklik alani [zeroPoint] icinde birlikte
+/// tasiniyor.
+///
+///     m_yerdeki = V + dV_G + k·X       (atmosferden gecmis kadir)
+///     m_alet    = m_yerdeki - ZP
+///     ADU/s     = 10^(-0.4 · m_alet)
+Radiometric starAduPerSecond({
+  required double vMagnitude,
+  required double altitudeDegrees,
+  double? colorIndexBV,
+  Measured? extinctionCoefficient,
+  Measured? zeroPoint,
+  Measured? bandCorrectionPerColorIndex,
+}) {
+  final gaps = <MissingQuantity>[];
+  if (extinctionCoefficient == null) gaps.add(extinctionCoefficientMissing);
+  if (zeroPoint == null) gaps.add(zeroPointMissing);
+  if (bandCorrectionPerColorIndex == null) {
+    gaps.add(bandCorrectionMissing);
+  } else if (colorIndexBV == null) {
+    gaps.add(colorIndexMissing);
+  }
+  if (gaps.isNotEmpty) return RadiometricGap(gaps);
+
+  final band = bandCorrectionPerColorIndex!.value * colorIndexBV!;
+  final x = airmassKastenYoung(altitudeDegrees);
+  final ground = vMagnitude + band + extinctionCoefficient!.value * x;
+  return RadiometricValue(
+    aduPerSecondFromInstrumentalMagnitude(ground - zeroPoint!.value),
+    'ADU/s',
+  );
+}
+
+/// Gokyuzu fonu, ADU/piksel/saniye — sifir noktasindan.
+///
+/// **Sonum uygulanmaz.** Yildiz isigi atmosferden gecerek gelir ve
+/// soner; gokyuzu fonu atmosferin ve sehrin kendi isigidir, zaten
+/// yerde olculur.
+Radiometric skyAduPerPixelPerSecond({
+  required double arcsecondsPerPixel,
+  Measured? skyMagPerSquareArcsec,
+  Measured? zeroPoint,
+}) {
+  final gaps = <MissingQuantity>[];
+  if (skyMagPerSquareArcsec == null) gaps.add(skyBackgroundMissing);
+  if (zeroPoint == null) gaps.add(zeroPointMissing);
+  if (gaps.isNotEmpty) return RadiometricGap(gaps);
+
+  final omega = arcsecondsPerPixel * arcsecondsPerPixel;
+  final perArcsec2 = aduPerSecondFromInstrumentalMagnitude(
+    skyMagPerSquareArcsec!.value - zeroPoint!.value,
+  );
+  return RadiometricValue(perArcsec2 * omega, 'ADU/px/s');
+}

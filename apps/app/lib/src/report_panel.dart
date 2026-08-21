@@ -239,7 +239,9 @@ class ReportPanel extends StatelessWidget {
 
   /// Kac halkanin tamamlandigi. Kalibrasyon geldikce dolacak.
   Widget _progress(ExposureReport report) {
-    const total = 7;
+    // Halka sayisi tek yerde: CalibrationSet.linkCount. Burada sabit
+    // yazilirsa defter degistiginde arayuz sessizce yanlis gosterirdi.
+    const total = CalibrationSet.linkCount;
     final done = total - report.missing.length;
     return Row(
       children: [

@@ -17,14 +17,17 @@
 /// olculmedi, 0.B Dizi B'den gelecek" demek ise durumu dogru anlatir.
 library;
 
+import 'dart:math' as math;
+
 import 'calibration.dart';
 import 'extinction.dart';
 import 'histogram.dart';
+import 'optics.dart';
+import 'photon_flux.dart';
 import 'missing.dart';
 import 'psf.dart';
 import 'sensor_calibration.dart';
 import 'signal_chain.dart';
-import 'sky_signal.dart';
 import 'snr.dart';
 import '../camera/exposure.dart';
 import '../camera/field_of_view.dart';
@@ -35,8 +38,19 @@ import '../camera/field_of_view.dart';
 /// hicbir sayi uretmez; doldukca zincirin daha buyuk kismi acilir.
 class CalibrationSet {
   final Measured? extinctionCoefficient;
-  final Measured? lensTransmission;
-  final Measured? quantumEfficiency;
+
+  /// Fotometrik sifir noktasi — QE, lens verimi ve aciklik alanini
+  /// BIRLIKTE tasir. Ucu ayri ayri olculemez; carpimlari tek olcumle
+  /// elde edilir.
+  ///
+  /// Belirli bir diyaframda olculur. Baska diyaframa tasimak icin
+  /// [zeroPointAtAperture] kullanilir — aciklik alani geometrik oldugu
+  /// icin bu tasima kesindir.
+  final Measured? zeroPoint;
+
+  /// [zeroPoint]'in olculdugu diyafram.
+  final double? zeroPointFNumber;
+
   final Measured? bandCorrectionPerColorIndex;
   final Measured? darkCurrent;
   final Measured? skyMagPerSquareArcsec;
@@ -44,31 +58,55 @@ class CalibrationSet {
 
   const CalibrationSet({
     this.extinctionCoefficient,
-    this.lensTransmission,
-    this.quantumEfficiency,
+    this.zeroPoint,
+    this.zeroPointFNumber,
     this.bandCorrectionPerColorIndex,
     this.darkCurrent,
     this.skyMagPerSquareArcsec,
     this.psfFwhmPixels,
   });
 
+  /// Sifir noktasini baska bir diyaframa tasir.
+  ///
+  ///     ZP(N) = ZP_ref + 2.5·log10( A(N) / A(N_ref) )
+  ///
+  /// Aciklik alani saf geometri oldugu icin bu tasima kesin. Tasinmayan
+  /// tek sey lens veriminin diyaframla degisimi — pratikte kucuk.
+  Measured? zeroPointAtAperture(double fNumber) {
+    final zp = zeroPoint;
+    final ref = zeroPointFNumber;
+    if (zp == null || ref == null) return null;
+    if ((fNumber - ref).abs() < 1e-9) return zp;
+    final ratio =
+        apertureAreaCm2(focalLengthMm: 100, fNumber: fNumber) /
+        apertureAreaCm2(focalLengthMm: 100, fNumber: ref);
+    return Measured(
+      value: zp.value + 2.5 * (math.log(ratio) / math.ln10),
+      unit: zp.unit,
+      source: '${zp.source} (f/$ref -> f/$fNumber tasindi)',
+      relativeUncertainty: zp.relativeUncertainty,
+    );
+  }
+
   /// Hicbir olcumun gelmedigi bugunku durum.
   static const empty = CalibrationSet();
 
   List<MissingQuantity> get missing => [
     if (extinctionCoefficient == null) extinctionCoefficientMissing,
-    if (lensTransmission == null) lensTransmissionMissing,
-    if (quantumEfficiency == null) quantumEfficiencyMissing,
+    if (zeroPoint == null) zeroPointMissing,
     if (bandCorrectionPerColorIndex == null) bandCorrectionMissing,
     if (darkCurrent == null) darkCurrentMissing,
     if (skyMagPerSquareArcsec == null) skyBackgroundMissing,
     if (psfFwhmPixels == null) psfFwhmMissing,
   ];
 
+  /// Zincirdeki toplam halka sayisi.
+  static const linkCount = 6;
+
   bool get isComplete => missing.isEmpty;
 
   /// Kac halkanin tamamlandigi — arayuzde ilerleme gostermek icin.
-  int get completedCount => 7 - missing.length;
+  int get completedCount => linkCount - missing.length;
 }
 
 /// Bir pozun tam raporu.
@@ -180,26 +218,25 @@ ExposureReport buildExposureReport({
     declinationDegrees: declinationDegrees,
   );
 
-  final star = starElectronRate(
+  // Sifir noktasi yolu. ZP olculdugu diyaframdan buradakine tasiniyor;
+  // aciklik alani geometrik oldugu icin tasima kesin.
+  final zp = calibration.zeroPointAtAperture(fNumber);
+
+  // ADU -> elektron: kazanc e-/ADU oldugu icin CARPILIR.
+  final star = starAduPerSecond(
     vMagnitude: vMagnitude,
     altitudeDegrees: altitudeDegrees,
-    focalLengthMm: focalLengthMm,
-    fNumber: fNumber,
     colorIndexBV: colorIndexBV,
     extinctionCoefficient: calibration.extinctionCoefficient,
-    lensTransmission: calibration.lensTransmission,
-    quantumEfficiency: calibration.quantumEfficiency,
+    zeroPoint: zp,
     bandCorrectionPerColorIndex: calibration.bandCorrectionPerColorIndex,
-  );
+  ).map((adu) => adu * sensor.gain.value);
 
-  final sky = skyElectronsPerPixelPerSecond(
+  final sky = skyAduPerPixelPerSecond(
     arcsecondsPerPixel: scale,
-    focalLengthMm: focalLengthMm,
-    fNumber: fNumber,
     skyMagPerSquareArcsec: calibration.skyMagPerSquareArcsec,
-    lensTransmission: calibration.lensTransmission,
-    quantumEfficiency: calibration.quantumEfficiency,
-  );
+    zeroPoint: zp,
+  ).map((adu) => adu * sensor.gain.value);
 
   // PSF olculmemisse ayak izi bilinmez; SNR de bilinmez.
   final fwhm = calibration.psfFwhmPixels;
@@ -263,4 +300,37 @@ ExposureReport buildExposureReport({
     ),
     missing: calibration.missing,
   );
+}
+
+/// Sifir noktasinin ilk ilkelerden **tahmini**.
+///
+/// QE, lens verimi ve aciklik alanindan hesaplanir. Olculmus ZP ile
+/// karsilastirilmasi tam olarak **Faz 0.D'nin isidir**: ikisi uyusuyorsa
+/// foton zinciri (kadir -> foton -> elektron) dogru kurulmus demektir.
+///
+/// Ayrisma varsa suclu adaylar: QE tahmini, lens verimi, bant
+/// duzeltmesi veya kazanc olcumu. Yani bu karsilastirma bir dogrulama
+/// degil, bir **teshis**.
+Radiometric predictedZeroPoint({
+  required double focalLengthMm,
+  required double fNumber,
+  required MeasuredSensorProfile sensor,
+  Measured? lensTransmission,
+  Measured? quantumEfficiency,
+}) {
+  final gaps = <MissingQuantity>[];
+  if (lensTransmission == null) gaps.add(lensTransmissionMissing);
+  if (quantumEfficiency == null) gaps.add(quantumEfficiencyMissing);
+  if (gaps.isNotEmpty) return RadiometricGap(gaps);
+
+  // V=0 yildiz atmosfer disinda kac ADU/s verir?
+  final area = apertureAreaCm2(focalLengthMm: focalLengthMm, fNumber: fNumber);
+  final electronsPerSecond =
+      vBandZeroPointTotalPhotonFlux *
+      area *
+      lensTransmission!.value *
+      quantumEfficiency!.value;
+  final aduPerSecond = electronsPerSecond / sensor.gain.value;
+  // m_alet = -2.5 log10(ADU/s);  ZP = V - m_alet = 0 + 2.5 log10(ADU/s)
+  return RadiometricValue(2.5 * (math.log(aduPerSecond) / math.ln10), 'kadir');
 }

@@ -4,30 +4,52 @@ import 'package:test/test.dart';
 /// Uydurma kalibrasyon degil — zincirin doldugunda calistigini gostermek
 /// icin kullanilan TEST degerleri. Gercek degerler Faz 0.B/0.C/0.D'den
 /// gelecek; bunlar oraya asla kopyalanmayacak.
-CalibrationSet _testCalibration() => const CalibrationSet(
-  extinctionCoefficient: Measured(
+/// Sifir noktasi ELLE YAZILMIYOR — QE ve T'den turetiliyor.
+///
+/// Boylece hem test degerleri tutarli kaliyor hem [predictedZeroPoint]
+/// sinaniyor. Gercekte yon terstir: ZP olculur, QE ve T'nin dogru olup
+/// olmadigi ondan anlasilir. Faz 0.D'nin yaptigi tam olarak bu
+/// karsilastirma.
+final _testZeroPoint = Measured(
+  value: predictedZeroPoint(
+    focalLengthMm: 14,
+    fNumber: 2.8,
+    sensor: canon760dIso1600,
+    lensTransmission: const Measured(value: 0.90, unit: '-', source: 'TEST'),
+    quantumEfficiency: const Measured(
+      value: 0.45,
+      unit: 'e-/foton',
+      source: 'TEST',
+    ),
+  ).valueOrNull!,
+  unit: 'kadir',
+  source: 'TEST — QE 0.45 ve T 0.90 varsayimindan turetildi',
+);
+
+CalibrationSet _testCalibration() => CalibrationSet(
+  extinctionCoefficient: const Measured(
     value: 0.25,
     unit: 'kadir/X',
     source: 'TEST DEGERI — gercek deger 0.B Dizi B\'den gelecek',
   ),
-  lensTransmission: Measured(value: 0.90, unit: '-', source: 'TEST DEGERI'),
-  quantumEfficiency: Measured(
-    value: 0.45,
-    unit: 'e-/foton',
-    source: 'TEST DEGERI',
-  ),
-  bandCorrectionPerColorIndex: Measured(
+  zeroPoint: _testZeroPoint,
+  zeroPointFNumber: 2.8,
+  bandCorrectionPerColorIndex: const Measured(
     value: 0.10,
     unit: 'kadir',
     source: 'TEST DEGERI',
   ),
-  darkCurrent: Measured(value: 0.05, unit: 'e-/px/s', source: 'TEST DEGERI'),
-  skyMagPerSquareArcsec: Measured(
+  darkCurrent: const Measured(
+    value: 0.05,
+    unit: 'e-/px/s',
+    source: 'TEST DEGERI',
+  ),
+  skyMagPerSquareArcsec: const Measured(
     value: 21.0,
     unit: 'kadir/arcsec^2',
     source: 'TEST DEGERI',
   ),
-  psfFwhmPixels: Measured(value: 1.8, unit: 'px', source: 'TEST DEGERI'),
+  psfFwhmPixels: const Measured(value: 1.8, unit: 'px', source: 'TEST DEGERI'),
 );
 
 ExposureReport _report({
@@ -71,8 +93,8 @@ void main() {
 
     test('neyin eksik oldugunu ve nereden gelecegini soyluyor', () {
       final r = _report();
-      expect(r.missing.length, 7);
-      expect(r.pendingStatements.length, 7);
+      expect(r.missing.length, 6);
+      expect(r.pendingStatements.length, 6);
       // Her satir bir kaynak isaret etmeli — "bilinmiyor" demek yetmez.
       for (final line in r.pendingStatements) {
         expect(line, contains('olculmedi'));
@@ -87,7 +109,7 @@ void main() {
 
     test('eksik sayaci ilerlemeyi gosteriyor', () {
       expect(CalibrationSet.empty.completedCount, 0);
-      expect(_testCalibration().completedCount, 7);
+      expect(_testCalibration().completedCount, 6);
       const partial = CalibrationSet(
         extinctionCoefficient: Measured(
           value: 0.25,
@@ -96,7 +118,7 @@ void main() {
         ),
       );
       expect(partial.completedCount, 1);
-      expect(partial.missing.length, 6);
+      expect(partial.missing.length, 5);
     });
   });
 

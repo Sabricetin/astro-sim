@@ -299,8 +299,50 @@ hangisinin uydurma olduğu bir hafta sonra ayırt edilemez hale gelir.
 
 Uydurmanın maliyeti yanlış sonuç değil — **yanlış olduğunu bilememek.**
 
+### Referans kararı — 22 Ağustos 2026: VIIRS yerine kendi karendeki yıldız
+
+Bu bölüm baştan **VIIRS'i bağımsız referans** olarak öngörüyordu. Faz 5
+iskeleti yazılırken sorun görüldü:
+
+VIIRS bir uydu; **yerden yukarı çıkan** ışığı ölçüyor. Bize gereken ise
+**yerden yukarı bakınca görünen** fon parlaklığı. Aradaki dönüşüm
+(Falchi 2016 atlası) kendi başına **%20–30 saçılma** taşıyor. Yani
+referansın belirsizliği, kriterin toleransından (%15) büyük — hassas
+teraziyi banyo tartısıyla doğrulamaya çalışmak gibi. Doğru bir model
+bile bu testi kaybedebilirdi.
+
+**Yerine geçen yöntem: fotometrik sıfır noktası.** Aynı karedeki,
+kadiri katalogdan bilinen bir yıldız ölçülür:
+
+    ZP = V_gerçek − m_atmosfer_dışı        (Bouguer uydurmasının kesimi)
+    μ_gökyüzü = −2.5·log10(fon / ω) + ZP
+
+Kuantum verimi, lens aktarım verimi ve açıklık alanı **sadeleşiyor** —
+ikisi de aynı optikten, aynı gecede, yerde ölçüldüğü için.
+
+**Bunun üç sonucu var:**
+
+1. `μ_sky` artık 0.C'yi (VIIRS) beklemiyor; **kullanıcının kendi
+   karelerinden** çıkıyor.
+2. `QE` ve `T` ayrı ayrı ölçülmüyor — **ölçülemezler** (üretici
+   yayınlamaz, laboratuvar gerekir) ama zincirin ihtiyacı zaten
+   çarpımları ve o çarpım ZP'nin içinde.
+3. Kalibrasyon defteri **yediden altıya** indi ve altısının **beşi tek
+   gecede** kapanıyor: k, ZP, FWHM, I_d, μ_sky.
+
+**VIIRS elenmedi, yeri değişti:** artık zorunlu referans değil, isteğe
+bağlı *çapraz kontrol*. Bir de tersi hâlâ değerli: `predictedZeroPoint()`
+QE ve T varsayımından ZP'yi tahmin ediyor; ölçülen ZP ile
+karşılaştırması **Faz 0.D'nin teşhis aracı** — ayrışma varsa suçlu
+adayları QE, lens verimi, bant düzeltmesi veya kazanç ölçümü.
+
+**Çıkış kriteri buna göre yeniden yazıldı:**
+
 **Çıkış kriteri (iki parçalı, ikisi de gerekli):**
-1. Fon seviyesi, bağımsız ölçülmüş (VIIRS/SQM) fon parlaklığına karşı **%15 içinde**
+1. Aynı gecenin farklı karelerinden hesaplanan fon parlaklığı kendi
+   içinde **%10 (0.1 kadir) tutarlı** — farklı ISO'lar, farklı pozlar
+   ve farklı çerçeveler aynı sayıyı vermeli. Bu, referansın belirsizliğine
+   bağlı olmayan bir testtir ve daha sıkıdır.
 2. Hata ISO, poz süresi ve **hedef yüksekliği** boyunca tutarlı — sistematik bir eğilim göstermiyor
 
 İkinci madde ilkinden zor ve daha değerli. Yükseklik boyunca tutarlılık, hava kütlesi modelinin doğruluğunu test eder — ve senin ana hedefin 24°'de durduğu için bu test gerçekten önemli. Sadece zenit yakınında kalibre edip düşük yüksekliğe güvenme.

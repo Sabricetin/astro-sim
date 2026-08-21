@@ -81,6 +81,9 @@ def main() -> int:
                     help="makine saatinin UTC farki (Turkiye: 3)")
     ap.add_argument("--ra", type=float, default=VEGA_RA_DEG)
     ap.add_argument("--dec", type=float, default=VEGA_DEC_DEG)
+    ap.add_argument("--target-mag", type=float, default=0.03,
+                    help="hedef yildizin V kadiri (Vega: 0.03). Sifir noktasi "
+                         "bundan hesaplanir.")
     ap.add_argument("--channel", default="G1")
     ap.add_argument("--center-fraction", type=float, default=0.5,
                     help="hedefin arandigi merkezi bolge orani")
@@ -198,8 +201,33 @@ def main() -> int:
               f"{r['flux_adu']:10.0f} "
               f"{(r['fwhm_px'] or 0):6.2f} {e:+7.3f}{flag}")
     print("-" * 60)
+    # --- Fotometrik sifir noktasi ---
+    #
+    # m_alet = m0 + k*X uydurmasinda m0, yildizin atmosfer disi ALETI
+    # kadiri. Gercek kadiri biliniyorsa fark sabittir:
+    #
+    #     ZP = V_gercek - m0
+    #     m_yerdeki = m_alet + ZP
+    #
+    # Bu tek sayi QE, lens verimi ve aciklik alanini BIRLIKTE tasiyor.
+    # Ayri ayri olculemezler, ama zincirin ihtiyaci zaten carpimlari.
+    #
+    # Ayni ZP gokyuzu fonuna da uygulanir — cunku ikisi de ayni optikten,
+    # ayni gecede, yerde olculdu. Fona sonum duzeltmesi UYGULANMAZ:
+    # yildiz isigi atmosferden gecerek gelir, fon atmosferin kendi isigi.
+    zp = None
+    if args.target_mag is not None:
+        zp = float(args.target_mag - m0)
+
     print(f"\n  SONUM KATSAYISI  k = {k:.4f} +- {k_err:.4f} kadir / hava kutlesi")
     print(f"  atmosfer disi     m0 = {m0:.4f}")
+    if zp is not None:
+        print(f"  SIFIR NOKTASI     ZP = {zp:.4f}  "
+              f"(hedef V={args.target_mag})")
+        print(f"     m_yerdeki = m_alet + ZP")
+        print(f"     Bu sayi QE, lens verimi ve aciklik alanini birlikte")
+        print(f"     tasiyor. Gokyuzu fonunu kadir/arcsec^2'ye cevirmek icin")
+        print(f"     analyze_sky.py'ye --zero-point {zp:.4f} olarak ver.")
     print(f"  artik RMS            = {rms:.4f} kadir")
     print(f"  kaldirac          X = {X.min():.2f} .. {X.max():.2f}")
 
@@ -216,6 +244,11 @@ def main() -> int:
     if k > 0.70:
         warn.append("k cok buyuk (>0.70) — pus/bulut veya isik kirliligi "
                     "fotometriye karisiyor olabilir.")
+    if chosen > 0 and zp is not None:
+        warn.append(f"SIFIR NOKTASI GECERSIZ: hedef yildiz doymus oldugu icin "
+                    f"{chosen + 1}. siradaki BASKA bir yildiz olculdu ve onun "
+                    f"gercek kadiri bilinmiyor. k gecerli, ZP degil. "
+                    f"Sifir noktasi icin hedefin doymadigi bir kare gerekli.")
     for w in warn:
         print(f"  ! {w}")
 
@@ -231,6 +264,8 @@ def main() -> int:
         "extinction_coefficient_k": float(k),
         "k_uncertainty": k_err,
         "zero_point_m0": float(m0),
+        "photometric_zero_point": zp if chosen == 0 else None,
+        "target_magnitude": args.target_mag,
         "residual_rms_mag": rms,
         "airmass_range": [float(X.min()), float(X.max())],
         "psf_fwhm_px_median": float(np.median(fwhms)) if fwhms else None,

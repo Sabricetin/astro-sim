@@ -68,6 +68,11 @@ def main() -> int:
     ap.add_argument("--channel", default="G1")
     ap.add_argument("--roi", type=int, default=600,
                     help="merkezden kirpma; vinyetlemeden kacinmak icin")
+    ap.add_argument("--zero-point", type=float, default=None,
+                    help="analyze_extinction.py'den gelen ZP. Verilirse fon "
+                         "kadir/arcsec^2'ye cevrilir.")
+    ap.add_argument("--arcsec-per-pixel", type=float, default=None,
+                    help="acisal olcek; 206.265*piksel_um/odak_mm")
     ap.add_argument("--out", type=Path, default=Path("data/faz0b/fon"))
     args = ap.parse_args()
 
@@ -190,6 +195,43 @@ def main() -> int:
               f"(bu dizinin diyaframinda, {len(all_fwhm)} kare)")
         print(f"  Faz 5 FWHM olarak BUNU bekliyor — Dizi B kisilmis")
         print(f"  diyaframla cekildiyse oradaki deger daha keskin cikar.")
+
+    # ---- Mutlak fon parlakligi ----
+    #
+    # Sifir noktasi ayni geceden, ayni optikten geliyor; bu yuzden QE,
+    # lens verimi ve aciklik alani kendiliginden sadelesiyor. VIIRS gibi
+    # bir disaridan referansa gerek yok — ve iyi ki yok: VIIRS uydudan
+    # YUKARI cikan isigi olcer, biz yerden YUKARI bakinca goruneni
+    # istiyoruz. Aradaki donusum modeli %20-30 sacilma tasiyor.
+    #
+    # Fona sonum duzeltmesi UYGULANMIYOR: yildiz isigi atmosferden
+    # gecerek gelir ve soner, gokyuzu fonu ise atmosferin ve sehrin
+    # kendi isigi — zaten yerde olculuyor.
+    if args.zero_point is not None and args.arcsec_per_pixel is not None:
+        omega = args.arcsec_per_pixel ** 2      # piksel basina arcsec^2
+        for iso, v in per_iso.items():
+            adu_per_s = v["adu_per_s"]
+            if adu_per_s <= 0:
+                continue
+            m_inst = -2.5 * np.log10(adu_per_s / omega)
+            v["sky_mag_per_sq_arcsec"] = float(m_inst + args.zero_point)
+        mus = [v["sky_mag_per_sq_arcsec"] for v in per_iso.values()
+               if "sky_mag_per_sq_arcsec" in v]
+        if mus:
+            mu = float(np.mean(mus))
+            result["sky_mag_per_sq_arcsec"] = mu
+            print(f"\n  GOKYUZU FONU = {mu:.2f} kadir/arcsec^2")
+            bortle = ("1-2 (mukemmel)" if mu > 21.7 else
+                      "3-4 (kirsal)" if mu > 21.0 else
+                      "5 (kirsal-banliyo)" if mu > 20.5 else
+                      "6-7 (banliyo)" if mu > 19.0 else
+                      "8-9 (sehir)")
+            print(f"  kabaca Bortle {bortle}")
+            if len(mus) > 1:
+                print(f"  ISO'lar arasi yayilim {max(mus) - min(mus):.3f} kadir")
+    elif args.zero_point is not None:
+        warn.append("--zero-point verildi ama --arcsec-per-pixel yok; "
+                    "mutlak fon hesaplanamadi")
 
     for w in warn:
         print(f"  ! {w}")
