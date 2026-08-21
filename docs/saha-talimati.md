@@ -60,25 +60,61 @@ cevap veriyor? Cevap "hayır" ise foton hesabının tamamı yamuk oturur.
 Işığı ve diyaframı sabitle. Yalnızca **poz süresini** değiştir. Her
 basamakta **2 kare**.
 
-Hedef: en kısa pozda doyumun ~%3'ü, en uzun pozda ~%80'i. Aradaki her
-basamak yaklaşık iki katı olsun:
+### Üç kural (1. denemede üçü de ihlal edildi)
+
+**1. En üst basamak doyuma DEĞMESİN, %85'te dursun.**
+Doymuş kare doğrusalsızlık değil kırpma gösterir ve ölçümü bozar.
+
+**2. Merdiven %60'ta bitmesin — asıl iş %60 ile %90 arasında.**
+Doğrusalsızlık orada ortaya çıkar. Aşağıda temiz çıkması bir şey
+kanıtlamaz.
+
+**3. En kısa poz 1/4 s'den kısa olmasın.**
+Kısa pozlarda perdenin zamanlama hatası ölçüme karışır. 1. denemede
+1/15 ile 1/8 arasında %5.1'lik bir basamak çıktı ve kaynağı ayırt
+edilemedi.
+
+### Diyaframı poza göre seç, tersini değil
+
+Merdiveni uzun pozlara oturtmak için ışığı kısman gerekiyor. En kolay
+yol diyafram. Yöntem:
+
+1. Planladığın **en uzun pozu** (2 s) çek.
+2. Kontrol et:
+   ```bash
+   ./.venv/bin/python tools/check_flat.py <kare.CR2>
+   ```
+3. %85 civarıysa tamam. Yüksekse bir durak kıs, düşükse bir durak aç.
+
+1. denemenin ışığında bu **f/16** ediyordu (f/14'ten bir 1/3 durak).
+
+### Basamaklar
 
 ```
-1/60 s  →  1/30 s  →  1/15 s  →  1/8 s  →  1/4 s  →  1/2 s  →  1 s  →  2 s
+1/4 s → 0.4 s → 0.6 s → 0.8 s → 1 s → 1.3 s → 1.6 s → 2 s
 ```
 
-**Kural: 1/250 s'den kısa poz kullanma.** Mekanik perdenin zamanlama
-hatası kısa pozlarda büyür ve doğrusallık testini bozar — tam da ölçmeye
-çalıştığın şeyi.
+Sekiz basamak, kabaca %11'den %90'a. Üstte adımlar sıklaşıyor —
+doğrusalsızlığın aranacağı yer orası.
 
-Başlamadan önce tek kare çekip kontrol et:
+### Sırayı palindrom yap
 
-```bash
-./.venv/bin/python tools/check_flat.py <ilk-kare.CR2>
+Kareleri şu sırayla çek:
+
+```
+1/4  0.4  0.6  0.8  1  1.3  1.6  2   2  1.6  1.3  1  0.8  0.6  0.4  1/4
 ```
 
-"merdiven başı — buradan yukarı çık" derse doğru yerdesin. "doymuş"
-derse ışığı kıs veya pozu kısalt.
+Yani merdiveni bir çık, bir in. Her basamağın iki karesi dizinin iki
+ucuna düşer.
+
+**Neden:** Böylece bir basamağın iki karesi arasındaki fark, doğrudan
+**ışığın tüm çekim boyunca ne kadar kaydığını** ölçer. Ardışık çekilmiş
+iki kare yalnızca o anki kararlılığı gösterir — 1. denemede tam olarak
+bu yüzden ışık "kararlı" göründü ama diziler arasında %5 kayma vardı.
+
+Ayrıca bu sıra Bulgu 3'ü de çözer: basamak poz süresini takip ediyorsa
+perde, saati takip ediyorsa ışık.
 
 ## Ne zaman güvenilir
 

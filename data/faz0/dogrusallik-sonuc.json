@@ -1,0 +1,137 @@
+{
+  "faz": "0.A",
+  "kanal": "G1",
+  "roi": 400,
+  "iso": 1600,
+  "sensor": {
+    "white_level": 15360,
+    "black_level": 2049.0,
+    "color_desc": "RGBG",
+    "raw_pattern": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        2
+      ]
+    ]
+  },
+  "gain_e_per_adu": 0.12326131331108743,
+  "read_noise_e_from_bias": 1.9857455324273119,
+  "read_noise_e_from_ptc": 0.0,
+  "read_noise_adu": 16.110046851567116,
+  "bias_offset_adu": 2049.165190625,
+  "full_well_e": 1640.7313414838848,
+  "ptc_slope": 8.112845572853793,
+  "ptc_intercept": -183.4723072542895,
+  "ptc_r2": 0.9999583669452834,
+  "linearity": {
+    "max_deviation_pct": 5.2141002156878615,
+    "light_spread_pct": 6.935207404967246,
+    "per_point": [
+      {
+        "exposure_s": 0.01666666667,
+        "signal_adu": 126.138928125,
+        "deviation_pct": -4.565067164219177
+      },
+      {
+        "exposure_s": 0.03333333333,
+        "signal_adu": 255.229284375,
+        "deviation_pct": -3.44856270214218
+      },
+      {
+        "exposure_s": 0.06666666667,
+        "signal_adu": 501.124334375,
+        "deviation_pct": -5.2141002156878615
+      },
+      {
+        "exposure_s": 0.125,
+        "signal_adu": 1007.183559375,
+        "deviation_pct": 1.6027822552683375
+      },
+      {
+        "exposure_s": 0.25,
+        "signal_adu": 1983.902628125,
+        "deviation_pct": 0.06618201061667192
+      },
+      {
+        "exposure_s": 0.5,
+        "signal_adu": 3944.912753125,
+        "deviation_pct": -0.511156149006083
+      },
+      {
+        "exposure_s": 1.0,
+        "signal_adu": 7940.424303125,
+        "deviation_pct": 0.12688277813587362
+      },
+      {
+        "exposure_s": 2.0,
+        "signal_adu": 13256.108109375,
+        "deviation_pct": -16.42179736923358
+      }
+    ]
+  },
+  "points": [
+    {
+      "iso": 1600,
+      "exposure_s": 0.01666666667,
+      "signal_adu": 126.138928125,
+      "variance_adu2": 1212.2082309296877,
+      "n_frames": 2
+    },
+    {
+      "iso": 1600,
+      "exposure_s": 0.03333333333,
+      "signal_adu": 255.229284375,
+      "variance_adu2": 2177.4073497924805,
+      "n_frames": 2
+    },
+    {
+      "iso": 1600,
+      "exposure_s": 0.06666666667,
+      "signal_adu": 501.124334375,
+      "variance_adu2": 4067.4930447216993,
+      "n_frames": 2
+    },
+    {
+      "iso": 1600,
+      "exposure_s": 0.125,
+      "signal_adu": 1007.183559375,
+      "variance_adu2": 7976.30505528748,
+      "n_frames": 2
+    },
+    {
+      "iso": 1600,
+      "exposure_s": 0.25,
+      "signal_adu": 1983.902628125,
+      "variance_adu2": 15838.457056428104,
+      "n_frames": 2
+    },
+    {
+      "iso": 1600,
+      "exposure_s": 0.5,
+      "signal_adu": 3944.912753125,
+      "variance_adu2": 31604.52468587576,
+      "n_frames": 2
+    },
+    {
+      "iso": 1600,
+      "exposure_s": 1.0,
+      "signal_adu": 7940.424303125,
+      "variance_adu2": 64351.52741195555,
+      "n_frames": 2
+    },
+    {
+      "iso": 1600,
+      "exposure_s": 2.0,
+      "signal_adu": 13256.108109375,
+      "variance_adu2": 401.3669546062305,
+      "n_frames": 2
+    }
+  ],
+  "warnings": [
+    "dogrusallik sapmasi %2'nin ustunde — uydurma araligini daraltmayi dene"
+  ]
+}
