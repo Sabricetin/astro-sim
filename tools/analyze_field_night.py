@@ -23,6 +23,7 @@ import argparse
 import json
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -140,8 +141,20 @@ def main() -> int:
     print(f"\n  QE ve T ayri ayri OLCULMUYOR — ZP ikisini birlikte tasiyor.")
     print(f"  Zincirin ihtiyaci zaten carpimlari; ayirmak laboratuvar isi.")
 
+    # Bu dosya dogrudan uygulamaya yapistiriliyor. Her sayinin yaninda
+    # KAYNAGI da gidiyor: uygulama kaynagi olmayan degeri kabul etmiyor.
+    # "Sihirli sayi yasak — her sabitin yaninda birimi ve kaynagi"
+    # kuralinin dosya bicimine gecmis hali.
+    src = f"Faz 0.B, {args.root.name}, ISO {args.iso}"
     summary = {
+        "format": "astro-sim-kalibrasyon",
+        "version": 1,
+        "source": src,
+        "measured_at": datetime.now().strftime("%Y-%m-%d"),
         "extinction_coefficient_k": ext and ext["extinction_coefficient_k"],
+        "extinction_k_uncertainty": ext and ext.get("k_uncertainty"),
+        "zero_point_f_number": ext and ext.get("zero_point_f_number"),
+        "identified_star_hr": (ext and ext.get("identified_star") or {}).get("hr"),
         "psf_fwhm_px": (sky and sky.get("psf_fwhm_px_median"))
         or (ext and ext.get("psf_fwhm_px_median")),
         "dark_current_e_per_px_per_s": dark_e,
@@ -149,10 +162,14 @@ def main() -> int:
         "photometric_zero_point": ext and ext.get("photometric_zero_point"),
         "sky_mag_per_sq_arcsec": sky and sky.get("sky_mag_per_sq_arcsec"),
         "iso": args.iso, "gain_used": gain,
+        "focal_length_mm": args.focal_length_mm,
+        "pixel_pitch_um": args.pixel_pitch_um,
         "site": {"lat": args.lat, "lon": args.lon, "elev_m": args.elev},
     }
     (out / "kalibrasyon.json").write_text(json.dumps(summary, indent=2))
     print(f"\n  ozet: {out / 'kalibrasyon.json'}")
+    print(f"  Bu dosyanin ICERIGINI uygulamadaki Kalibrasyon sekmesine")
+    print(f"  yapistir; rapor gercek sayilarla dolar.")
     print(f"\n  Sonraki adim: bu koordinati VIIRS'e sor (0.C), sonra 0.D.")
     return 0
 

@@ -28,6 +28,11 @@ class ReportPanel extends StatelessWidget {
   final double? vMagnitude;
 
   final double? colorIndexBV;
+
+  /// Sahadan yuklenen olcum defteri. Bos oldugunda rapor eksikleri
+  /// sayiyor; doldukca zincirin daha buyuk kismi sayi uretiyor.
+  final CalibrationSet calibration;
+
   final ValueChanged<CameraSettings> onChanged;
 
   const ReportPanel({
@@ -39,6 +44,7 @@ class ReportPanel extends StatelessWidget {
     required this.onChanged,
     required this.vMagnitude,
     required this.colorIndexBV,
+    this.calibration = CalibrationSet.empty,
   });
 
   static const _mono = TextStyle(
@@ -155,6 +161,7 @@ class ReportPanel extends StatelessWidget {
       sensor: sensor,
       pixelPitchMicrometers: settings.camera.pixelPitchMicrometers,
       colorIndexBV: colorIndexBV,
+      calibration: calibration,
     );
 
     return [
@@ -180,9 +187,26 @@ class ReportPanel extends StatelessWidget {
         ),
       ],
       const SizedBox(height: 12),
-      _SectionLabel('OLCUM BEKLEYEN  (${report.missing.length})'),
-      const SizedBox(height: 6),
-      for (final q in report.missing) _missingRow(q),
+      if (report.missing.isEmpty)
+        const Row(
+          children: [
+            Icon(Icons.verified, size: 14, color: Color(0xFF5FD08A)),
+            SizedBox(width: 8),
+            Text(
+              'Zincir tam — butun halkalar olculdu',
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: Color(0xFF5FD08A),
+              ),
+            ),
+          ],
+        )
+      else ...[
+        _SectionLabel('OLCUM BEKLEYEN  (${report.missing.length})'),
+        const SizedBox(height: 6),
+        for (final q in report.missing) _missingRow(q),
+      ],
       const SizedBox(height: 8),
       _progress(report),
     ];

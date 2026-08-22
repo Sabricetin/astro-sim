@@ -5,6 +5,7 @@ import 'package:astro_core/astro_core.dart';
 import 'package:astro_sim/src/report_panel.dart';
 import 'package:astro_sim/src/site.dart';
 import 'package:astro_sim/src/sky_model.dart';
+import 'package:astro_sim/src/calibration_panel.dart';
 import 'package:astro_sim/src/camera_settings.dart';
 import 'package:astro_sim/src/night_panel.dart';
 import 'package:astro_sim/src/star_style.dart';
@@ -496,6 +497,139 @@ void main() {
       expect(changed.exposureSeconds, 30);
       expect(changed.iso, 3200);
       expect(base.iso, 1600, reason: 'varsayilan ISO 1600 olmali');
+    });
+  });
+
+  group('Kalibrasyon paneli — Kademe 2', () {
+    const good = '''
+{"format":"astro-sim-kalibrasyon","version":1,
+ "source":"Faz 0.B, faz0b, ISO 1600","measured_at":"2026-09-11",
+ "extinction_coefficient_k":0.312,"extinction_k_uncertainty":0.018,
+ "zero_point_f_number":11.0,"identified_star_hr":7001,
+ "psf_fwhm_px":2.15,"dark_current_e_per_px_per_s":0.042,
+ "photometric_zero_point":17.42,"sky_mag_per_sq_arcsec":20.31,
+ "iso":1600}
+''';
+
+    Widget panel(
+      void Function(LoadedCalibration?) onChanged, {
+      LoadedCalibration? loaded,
+    }) => MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: CalibrationPanel(loaded: loaded, onChanged: onChanged),
+        ),
+      ),
+    );
+
+    testWidgets('gecerli defter yuklenince ozet gosteriliyor', (tester) async {
+      LoadedCalibration? got;
+      await tester.pumpWidget(panel((c) => got = c));
+      await tester.enterText(find.byType(TextField), good);
+      await tester.tap(find.text('Yukle'));
+      await tester.pumpAndSettle();
+
+      expect(got, isNotNull);
+      expect(
+        got!.calibration.extinctionCoefficient!.value,
+        closeTo(0.312, 1e-9),
+      );
+      expect(got!.identifiedStarHr, 7001);
+    });
+
+    testWidgets('kaynaksiz defter REDDEDILIYOR ve gerekce gosteriliyor', (
+      tester,
+    ) async {
+      LoadedCalibration? got;
+      await tester.pumpWidget(panel((c) => got = c));
+      await tester.enterText(
+        find.byType(TextField),
+        '{"extinction_coefficient_k": 0.3}',
+      );
+      await tester.tap(find.text('Yukle'));
+      await tester.pumpAndSettle();
+
+      expect(got, isNull, reason: 'kaynaksiz deger kabul edilmemeli');
+      expect(find.textContaining('source'), findsOneWidget);
+    });
+
+    testWidgets('bozuk JSON cokme yerine hata gosteriyor', (tester) async {
+      LoadedCalibration? got;
+      await tester.pumpWidget(panel((c) => got = c));
+      await tester.enterText(find.byType(TextField), '{bu json degil');
+      await tester.tap(find.text('Yukle'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(got, isNull);
+    });
+
+    testWidgets('yuklu defterde olculen ve eksik ayirt ediliyor', (
+      tester,
+    ) async {
+      final loaded = parseCalibrationJson(good);
+      await tester.pumpWidget(panel((_) {}, loaded: loaded));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('0.312'), findsOneWidget);
+      expect(find.textContaining('olculmedi'), findsOneWidget);
+      expect(find.textContaining('HR 7001'), findsOneWidget);
+    });
+  });
+
+  group('Rapor — yuklenen kalibrasyonla', () {
+    final canon = cameras.firstWhere((c) => c.name == 'Canon EOS 760D');
+
+    const complete = CalibrationSet(
+      extinctionCoefficient: Measured(
+        value: 0.30,
+        unit: 'kadir/X',
+        source: 'TEST',
+      ),
+      zeroPoint: Measured(value: 17.4, unit: 'kadir', source: 'TEST'),
+      zeroPointFNumber: 11.0,
+      bandCorrectionPerColorIndex: Measured(
+        value: 0.0,
+        unit: 'kadir',
+        source: 'TEST',
+      ),
+      darkCurrent: Measured(value: 0.04, unit: 'e-/px/s', source: 'TEST'),
+      skyMagPerSquareArcsec: Measured(
+        value: 20.3,
+        unit: 'kadir/as^2',
+        source: 'TEST',
+      ),
+      psfFwhmPixels: Measured(value: 2.15, unit: 'px', source: 'TEST'),
+    );
+
+    Widget report(CalibrationSet cal) => MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: ReportPanel(
+            settings: CameraSettings(camera: canon, iso: 1600),
+            targetName: 'M13',
+            altitudeDegrees: 60,
+            declinationDegrees: 36.5,
+            vMagnitude: 5.8,
+            colorIndexBV: 0.6,
+            calibration: cal,
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    testWidgets('kalibrasyonsuz: eksikler listeleniyor', (tester) async {
+      await tester.pumpWidget(report(CalibrationSet.empty));
+      expect(find.textContaining('OLCUM BEKLEYEN'), findsOneWidget);
+      expect(find.textContaining('SNR'), findsNothing);
+    });
+
+    testWidgets('tam kalibrasyonla SNR ve histogram geliyor', (tester) async {
+      await tester.pumpWidget(report(complete));
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Zincir tam'), findsOneWidget);
+      expect(find.textContaining('OLCUM BEKLEYEN'), findsNothing);
+      expect(find.textContaining('SNR'), findsOneWidget);
+      expect(find.textContaining('histogramin'), findsOneWidget);
     });
   });
 }

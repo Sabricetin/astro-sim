@@ -311,6 +311,52 @@ sinyali hesaplanamaz"* satırı var; M13'te yok.
 **Bekle:** İz 4.8 px'ten ~2.4 px'e düşüyor. Rapor kamera ayarlarını
 gerçekten izliyor.
 
+## F. Kalibrasyon sekmesi (Kademe 2)
+
+Sahadan dönünce ölçümü uygulamaya bu sekmeden veriyorsun.
+
+### F1 — Boş hali dürüst
+**Yap:** **Kalibrasyon** sekmesine geç.
+**Bekle:** Bir yapıştırma kutusu ve altında hangi komutun ürettiği dosyayı
+istediği yazıyor.
+
+### F2 — Kaynaksız ölçüm reddediliyor
+**Yap:** Kutuya `{"extinction_coefficient_k": 0.3}` yapıştır, **Yükle**.
+**Bekle:** Kırmızı hata: *"Dosyada source alanı yok. Kaynağı bilinmeyen
+ölçüm kabul edilmiyor…"* ve **hiçbir değer yüklenmiyor.**
+**Neden önemli:** Projenin temel kuralı. Bir sayının nereden geldiği
+kaybolursa, ölçülmüş mü uydurma mı olduğu bir hafta sonra ayırt edilemez.
+
+### F3 — Bozuk metin çökertmiyor
+**Yap:** Kutuya `{bu json degil` yapıştır, **Yükle**.
+**Bekle:** Anlaşılır hata, uygulama çalışmaya devam ediyor.
+
+### F4 — Gerçek defter yükleniyor
+**Yap:** Aşağıdaki metni yapıştır, **Yükle**:
+```json
+{"format":"astro-sim-kalibrasyon","version":1,
+ "source":"Faz 0.B, faz0b, ISO 1600","measured_at":"2026-09-11",
+ "extinction_coefficient_k":0.312,"extinction_k_uncertainty":0.018,
+ "zero_point_f_number":11.0,"identified_star_hr":7001,
+ "psf_fwhm_px":2.15,"dark_current_e_per_px_per_s":0.042,
+ "photometric_zero_point":17.42,"sky_mag_per_sq_arcsec":20.31,"iso":1600}
+```
+**Bekle:** Yeşil ✓ ile kaynak satırı, altında altı büyüklük. Beşi
+değeriyle (✓ yeşil), **dV_G** ise "ölçülmedi" (boş halka). `k` satırında
+`±%6` belirsizlik görünüyor. Üstte *"sıfır noktası HR 7001 ile ölçüldü,
+f/11'de"*.
+
+### F5 — Rapor gerçek sayılarla doluyor
+**Yap:** **Rapor** sekmesine geç.
+**Bekle:** Çubuk `0/6`'dan **`5/6`**'ya çıkmış. Sönüm satırı geldi.
+Eksik listesinde sadece `dV_G` kaldı.
+**Neden hâlâ SNR yok:** Bant düzeltmesi eksik. Zincir tek halka eksikken
+de sayı üretmeyi reddediyor — yarım cevap vermiyor.
+
+### F6 — Temizleme geri alıyor
+**Yap:** Kalibrasyon sekmesinde **Temizle**.
+**Bekle:** Rapor `0/6`'ya dönüyor, altı eksik yeniden listeleniyor.
+
 ## Notlar
 
 - Tüm saatler ekranda **yerel** (UTC+3), hesapta UTC. Yol haritası kuralı:

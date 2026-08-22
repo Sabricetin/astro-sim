@@ -22,6 +22,7 @@ export 'src/coords/horizontal.dart';
 export 'src/ephemeris/moon.dart';
 export 'src/ephemeris/twilight.dart';
 export 'src/radiometry/calibration.dart';
+export 'src/radiometry/calibration_file.dart';
 export 'src/radiometry/exposure_report.dart';
 export 'src/radiometry/extinction.dart';
 export 'src/radiometry/histogram.dart';

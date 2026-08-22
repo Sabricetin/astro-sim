@@ -337,6 +337,32 @@ hassasiyetle, konum RMS 0.15–0.76 piksel.
 Sönüm aracına bağlandı: hedef doysa bile ölçülen yıldız tanınıyor ve
 ZP kurtuluyor.
 
+## Kademe 2 arayüzü ✅ (22 Ağustos 2026)
+
+Ürün kararındaki "tek kare ile kalibrasyon" yolunun uygulama tarafı.
+
+**Köprü nereden kuruldu ve neden:** Flutter RAW dosyası çözemiyor —
+CR2 için LibRaw gerekiyor, o da mobil/web'de ayrı bir uğraş. O yüzden
+iş bölümü net: Python araçları ölçümü yapar ve `kalibrasyon.json`
+üretir, uygulama onu okur.
+
+Yükleme yolu **yapıştırma** seçildi; dosya seçici bir bağımlılık ve
+web'de ayrı bir yol demek olurdu. Yapıştırma masaüstü, web ve telefonda
+aynı şekilde çalışıyor.
+
+**Kaynaksız ölçüm reddediliyor.** Dosyada `source` alanı yoksa okuma
+hata veriyor ve gerekçesini yazıyor. Bu, "her sabitin yanında birimi ve
+kaynağı" kuralının dosya biçimine geçmiş hali — kural artık sadece kod
+içinde değil, veri sınırında da uygulanıyor.
+
+Ayrıca **tanınmayan alanlar sessizce yutulmuyor**, uyarı olarak
+gösteriliyor: ileri sürümden gelen bir dosya olduğunu anlamanın tek
+yolu bu.
+
+`k`'nın mutlak belirsizliği (kadir/X) okunurken bağıl belirsizliğe
+çevriliyor; `Measured` bağıl bekliyor ve iki biçimi karıştırmak
+belirsizliği sessizce yanlış ölçekler.
+
 ## Sıradaki
 
 | Faz | Durum | Engel |

@@ -5,6 +5,7 @@ import 'package:astro_core/astro_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import 'src/calibration_panel.dart';
 import 'src/camera_panel.dart';
 import 'src/night_panel.dart';
 import 'src/report_panel.dart';
@@ -49,7 +50,7 @@ final presets = <ViewPreset>[
 ];
 
 /// Alt paneldeki sekmeler.
-enum _Tab { camera, plan, report }
+enum _Tab { camera, plan, report, calibration }
 
 class SkyScreen extends StatefulWidget {
   const SkyScreen({super.key});
@@ -98,6 +99,10 @@ class _SkyScreenState extends State<SkyScreen> {
   /// Hedefin V kadiri. Difuz hedeflerde (galaktik merkez) yok — o zaman
   /// yildiz sinyali hesaplanamaz ve rapor bunu acikca soyler.
   double? _targetMagnitude;
+
+  /// Sahadan gelen olcum defteri. Yuklenmediginde rapor eksikleri
+  /// listeliyor; yuklendikce zincirin daha buyuk kismi aciliyor.
+  LoadedCalibration? _calibration;
   NightPlan? _plan;
 
   /// Gosterim icin yerel saat farki; hesap hep UTC.
@@ -434,12 +439,16 @@ class _SkyScreenState extends State<SkyScreen> {
                   ButtonSegment(value: _Tab.camera, label: Text('Kamera')),
                   ButtonSegment(value: _Tab.plan, label: Text('Plan')),
                   ButtonSegment(value: _Tab.report, label: Text('Rapor')),
+                  ButtonSegment(
+                    value: _Tab.calibration,
+                    label: Text('Kalibrasyon'),
+                  ),
                 ],
                 selected: {_tab},
                 showSelectedIcon: false,
                 onSelectionChanged: (v) => setState(() => _tab = v.first),
               ),
-              if (_tab != _Tab.camera) ...[
+              if (_tab == _Tab.plan || _tab == _Tab.report) ...[
                 const SizedBox(width: 12),
                 Expanded(child: _targetSelector()),
                 const SizedBox(width: 12),
@@ -448,7 +457,12 @@ class _SkyScreenState extends State<SkyScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          if (_tab == _Tab.report)
+          if (_tab == _Tab.calibration)
+            CalibrationPanel(
+              loaded: _calibration,
+              onChanged: (c) => setState(() => _calibration = c),
+            )
+          else if (_tab == _Tab.report)
             ReportPanel(
               settings: _settings,
               targetName: _targetName,
@@ -458,6 +472,7 @@ class _SkyScreenState extends State<SkyScreen> {
               // Messier katalogunda B-V yok; yildiz kataloguna baglanmasi
               // Faz 6'nin isi. Simdilik null, rapor bunu eksik sayiyor.
               colorIndexBV: null,
+              calibration: _calibration?.calibration ?? CalibrationSet.empty,
               onChanged: (s) => setState(() => _settings = s),
             )
           else if (_tab == _Tab.plan && _plan != null)
