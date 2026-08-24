@@ -149,6 +149,10 @@ class NightPanel extends StatelessWidget {
                 ],
               ),
             ],
+            if (plan.horizon != null && !plan.horizon!.isFlat) ...[
+              const SizedBox(height: 6),
+              _horizonWarning(),
+            ],
             const SizedBox(height: 10),
             if (_now != null) _liveConditions(_now!),
             const SizedBox(height: 8),
@@ -214,5 +218,57 @@ class NightPanel extends StatelessWidget {
       ' — ${_shownPenalty(penalty).toStringAsFixed(1)} kadir, $verdict',
     );
     return buffer.toString();
+  }
+
+  /// Ufkun ne kaybettirdigi.
+  ///
+  /// Sahada en cok ise yarayan uyari bu: hedef esigi gecmis ama tepe
+  /// hala kapatiyorsa, kullanici bunu bilmeden saatlerce bekler.
+  Widget _horizonWarning() {
+    final lost = plan.lostToHorizon;
+    final blocked = plan.blockedByHorizon;
+    if (lost == Duration.zero) {
+      return const Row(
+        children: [
+          Icon(Icons.terrain, size: 13, color: Color(0xFF5FD08A)),
+          SizedBox(width: 8),
+          Text(
+            'Ufuk bu hedefi engellemiyor',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 11,
+              color: Color(0xFF5FD08A),
+            ),
+          ),
+        ],
+      );
+    }
+    final lines = <String>[
+      'Ufuk ${lost.inMinutes} dk goturuyor',
+      if (blocked != null)
+        '${_local(blocked.start)}-${_local(blocked.end)} arasi esigi gecti '
+            'ama TEPE KAPATIYOR',
+    ];
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 2),
+          child: Icon(Icons.terrain, size: 13, color: Color(0xFFE0A44C)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            lines.join('\n'),
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 11,
+              height: 1.5,
+              color: Color(0xFFE0A44C),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

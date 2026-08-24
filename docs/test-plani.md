@@ -357,6 +357,45 @@ de sayı üretmeyi reddediyor — yarım cevap vermiyor.
 **Yap:** Kalibrasyon sekmesinde **Temizle**.
 **Bekle:** Rapor `0/6`'ya dönüyor, altı eksik yeniden listeleniyor.
 
+## G. Ufuk sekmesi (Faz 7)
+
+### G1 — Kapalıyken hiçbir şey değişmiyor
+**Yap:** **Ufuk** sekmesi, anahtar kapalı.
+**Bekle:** Haritada arazi yok, Plan sekmesinde ufuk satırı yok.
+
+### G2 — Güneye tepe koyunca pencere kısalıyor
+**Yap:** Hedef **Galaktik merkez**, tarih 15 Temmuz, konum Mersin.
+Plan sekmesinde pencereyi not et (**165 dk** olmalı). Sonra Ufuk
+sekmesinde **G**, **GD** ve **GB** değerlerini **23°** yap, anahtarı aç.
+**Bekle:** Pencere ~**106 dk**'ya düşüyor ve turuncu satır çıkıyor:
+*"Ufuk 59 dk götürüyor"* + engellenen saat aralığı.
+
+### G3 — Doğuya tepe koymak etkilemiyor
+**Yap:** Güneyi sıfırla, **D** (90°) değerini 40° yap.
+**Bekle:** Pencere yine 165 dk. Ufuk **yöne bağlı** — batıdaki tepe
+doğu ufkunu kapatmaz.
+
+### G4 — Alçak engel etkisiz
+**Yap:** Bütün yönleri **18°** yap.
+**Bekle:** Pencere değişmiyor. Hava kütlesi eşiği (20°) zaten daha
+kısıtlayıcı. **Eşik ve ufuk birbirinin yerine geçmiyor** — biri fizik,
+öteki coğrafya; etkin eşik ikisinin büyüğü.
+
+### G5 — Harita arazi siluetini çiziyor
+**Yap:** Güneye 25° koy, haritada güneye bak (ufuk çizgisi görünsün).
+**Bekle:** Ufuk çizgisinin üstünde daha açık renkli bir sırt hattı ve
+altında kararmış alan.
+
+### G6 — Kadraj döndürülünce arazi doğru yerde kalıyor
+**Yap:** Haritayı döndür (roll).
+**Bekle:** Kararan alan hâlâ **arazinin altında** — ekranın altında
+değil. Bu, karartmanın gökyüzü koordinatlarında yapıldığının kanıtı.
+
+### G7 — Özet doğru
+**Yap:** G'ye 30°, KB'ye 10° ver.
+**Bekle:** *"En yüksek engel 30.0°, G yönünde"* ve kapalı gökyüzü
+yüzdesi.
+
 ## Notlar
 
 - Tüm saatler ekranda **yerel** (UTC+3), hesapta UTC. Yol haritası kuralı:

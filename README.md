@@ -131,6 +131,7 @@ Kendi gövdeni ölçmek istersen: [`docs/faz0-cekim-talimati.md`](docs/faz0-ceki
 
 Sahada yapılacak ölçümler: [`docs/saha-talimati.md`](docs/saha-talimati.md)
 Dönünce çalıştırılacak analiz: [`docs/analiz-araclari.md`](docs/analiz-araclari.md)
+Kendi ufkunu ölçmek: [`docs/ufuk-olcumu.md`](docs/ufuk-olcumu.md)
 
 ## Kararlar
 

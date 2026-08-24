@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'src/calibration_panel.dart';
 import 'src/camera_panel.dart';
+import 'src/horizon_panel.dart';
 import 'src/night_panel.dart';
 import 'src/report_panel.dart';
 import 'src/camera_settings.dart';
@@ -50,7 +51,7 @@ final presets = <ViewPreset>[
 ];
 
 /// Alt paneldeki sekmeler.
-enum _Tab { camera, plan, report, calibration }
+enum _Tab { camera, plan, report, calibration, horizon }
 
 class SkyScreen extends StatefulWidget {
   const SkyScreen({super.key});
@@ -103,13 +104,27 @@ class _SkyScreenState extends State<SkyScreen> {
   /// Sahadan gelen olcum defteri. Yuklenmediginde rapor eksikleri
   /// listeliyor; yuklendikce zincirin daha buyuk kismi aciliyor.
   LoadedCalibration? _calibration;
+
+  /// Sekiz yonun ufuk yukseklikleri. Duz ufuk = hepsi sifir.
+  List<double> _horizonAltitudes = List<double>.from(HorizonPanel.flat);
+  bool _horizonEnabled = false;
+
+  /// Plan hesabina girecek ufuk. Kapaliysa null — plan duz ufuk
+  /// varsayar ve lostToHorizon sifir kalir.
+  Horizon? get _horizon =>
+      _horizonEnabled ? HorizonPanel.buildHorizon(_horizonAltitudes) : null;
   NightPlan? _plan;
 
   /// Gosterim icin yerel saat farki; hesap hep UTC.
   Duration get _localOffset => _site.utcOffset;
 
   void _recomputePlan() {
-    _plan = planNight(target: _target, observer: observer, aroundUtc: _utc);
+    _plan = planNight(
+      target: _target,
+      observer: observer,
+      aroundUtc: _utc,
+      horizon: _horizon,
+    );
   }
 
   /// Konum degisince gokyuzu de plan da bastan hesaplanir. Kisayol yok:
@@ -335,6 +350,7 @@ class _SkyScreenState extends State<SkyScreen> {
                         horizontalFovDegrees: _fov,
                         scratch: scratch,
                         rollDegrees: _roll,
+                        horizonProfile: _horizon,
                         showConstellations: _showConstellations,
                         showLabels: _showLabels,
                         frame: _showFrame
@@ -439,6 +455,7 @@ class _SkyScreenState extends State<SkyScreen> {
                   ButtonSegment(value: _Tab.camera, label: Text('Kamera')),
                   ButtonSegment(value: _Tab.plan, label: Text('Plan')),
                   ButtonSegment(value: _Tab.report, label: Text('Rapor')),
+                  ButtonSegment(value: _Tab.horizon, label: Text('Ufuk')),
                   ButtonSegment(
                     value: _Tab.calibration,
                     label: Text('Kalibrasyon'),
@@ -457,7 +474,20 @@ class _SkyScreenState extends State<SkyScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          if (_tab == _Tab.calibration)
+          if (_tab == _Tab.horizon)
+            HorizonPanel(
+              altitudes: _horizonAltitudes,
+              enabled: _horizonEnabled,
+              onChanged: (v) => setState(() {
+                _horizonAltitudes = v;
+                _recomputePlan();
+              }),
+              onEnabledChanged: (v) => setState(() {
+                _horizonEnabled = v;
+                _recomputePlan();
+              }),
+            )
+          else if (_tab == _Tab.calibration)
             CalibrationPanel(
               loaded: _calibration,
               onChanged: (c) => setState(() => _calibration = c),

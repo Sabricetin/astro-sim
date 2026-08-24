@@ -363,6 +363,48 @@ yolu bu.
 çevriliyor; `Measured` bağıl bekliyor ve iki biçimi karıştırmak
 belirsizliği sessizce yanlış ölçekler.
 
+## Faz 7 — Ufuk profili ✅ çekirdek + arayüz (24 Ağustos 2026)
+
+Yol haritası bunu "farklılaştırıcı" diye işaretlemişti ama kendi notunda
+daha doğrusunu söylüyordu: projenin ana hedefi (galaktik merkez ~24°)
+neredeyse her konumda bir sırt tarafından kesildiği için ufuk bir lüks
+değil **ön koşul**.
+
+**Sıra kararı: elle girilen ufuk, DEM'den önce.** Uydu yükseklik verisi
+internet ve önbellek tasarımı istiyor; üstelik ağaçları, binaları ve
+duvarı **göremez**. Gözle ölçülen profil çoğu zaman daha doğru.
+`Horizon.fromSamples` DEM'i sonradan aynı tipe dolduracak.
+
+**Ölçülen değer** — Mersin'den galaktik merkez, 15 Temmuz:
+
+| Ufuk | Pencere | Kayıp |
+|---|---|---|
+| Düz | 165 dk | — |
+| Güneyde 18° bina | 165 dk | 0 dk |
+| Güneyde 23° tepe | 106 dk | **59 dk** |
+
+18°'lik engelin etkisiz olması önemli bir ayrımı gösteriyor: **eşik ve
+ufuk birbirinin yerine geçmiyor.** Biri fizik (sönüm), öteki coğrafya
+(engel); etkin eşik ikisinin büyüğü.
+
+### Çizimde bir tuzak
+
+Arazi siluetinin altını karartırken "ufkun altı" ekranda aşağı **değil**
+— kadraj döndürülebiliyor. Dolgu ekran dibine kadar çizilseydi roll
+uygulandığında yanlış yer kararırdı. Bunun yerine her azimutta profil
+yüksekliğinden −25°'ye inen şeritler, **gökyüzü koordinatlarında**
+kuruluyor.
+
+### Test yazarken düştüğüm tuzak
+
+Sırtı yalnızca 180°'de tepe yapacak şekilde tanımlamıştım;
+interpolasyon onu hızla düşürünce hedef kenardan sıyrılıyordu. Gerçek
+bir dağ sırtı geniş bir azimut aralığını kaplar ve hedef pencere boyunca
+168°–205° arasında geziyor.
+
+`docs/ufuk-olcumu.md`: telefonun eğim ölçeriyle 15 dakikada ölçme
+talimatı.
+
 ## Sıradaki
 
 | Faz | Durum | Engel |

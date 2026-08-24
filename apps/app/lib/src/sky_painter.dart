@@ -25,6 +25,10 @@ class SkyPainter extends CustomPainter {
   final double horizontalFovDegrees;
   final double rollDegrees;
   final bool showHorizon;
+
+  /// Arazi profili. Verilirse ufuk cizgisinin uzerine engel silueti
+  /// cizilir ve altindaki gokyuzu karartilir.
+  final astro.Horizon? horizonProfile;
   final bool showConstellations;
   final bool showLabels;
 
@@ -43,6 +47,7 @@ class SkyPainter extends CustomPainter {
     required this.scratch,
     this.rollDegrees = 0.0,
     this.showHorizon = true,
+    this.horizonProfile,
     this.showConstellations = true,
     this.showLabels = true,
     this.frame,
@@ -279,36 +284,98 @@ class SkyPainter extends CustomPainter {
     double cx,
     double cy,
   ) {
-    final path = Path();
-    var started = false;
-    for (var az = 0.0; az <= 360.0; az += 0.5) {
+    Offset? at(double az, double alt) {
       final p = astro.project(
         azimuthDegrees: az,
-        altitudeDegrees: 0.0,
+        altitudeDegrees: alt,
         centerAzimuthDegrees: centerAzimuthDegrees,
         centerAltitudeDegrees: centerAltitudeDegrees,
         rollDegrees: rollDegrees,
       );
-      if (p == null) {
+      if (p == null) return null;
+      return Offset(cx + p.x * pixelsPerTangent, cy - p.y * pixelsPerTangent);
+    }
+
+    // Matematiksel ufuk (0 derece) — her zaman, referans olarak.
+    final flat = Path();
+    var started = false;
+    for (var az = 0.0; az <= 360.0; az += 0.5) {
+      final o = at(az, 0.0);
+      if (o == null) {
         started = false;
         continue;
       }
-      final x = cx + p.x * pixelsPerTangent;
-      final y = cy - p.y * pixelsPerTangent;
       if (!started) {
-        path.moveTo(x, y);
+        flat.moveTo(o.dx, o.dy);
         started = true;
       } else {
-        path.lineTo(x, y);
+        flat.lineTo(o.dx, o.dy);
       }
     }
     canvas.drawPath(
-      path,
+      flat,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2
         ..color = const Color(0x66407080),
     );
+
+    final profile = horizonProfile;
+    if (profile == null || profile.isFlat) return;
+
+    // Arazi silueti.
+    //
+    // "Ufkun alti" ekranda asagi DEMEK DEGIL — kadraj dondurulmus
+    // olabilir (roll). O yuzden dolgu ekran dibine kadar cizilmiyor;
+    // her azimutta profil yuksekliginden -25 dereceye kadar inen bir
+    // serit olarak, gokyuzu koordinatlarinda kuruluyor. Boylece her
+    // yonelimde dogru yer kararir.
+    const floor = -25.0;
+    var run = <Offset>[];
+    var runFloor = <Offset>[];
+
+    void flush() {
+      if (run.length < 2) {
+        run = [];
+        runFloor = [];
+        return;
+      }
+      final fill = Path()..moveTo(run.first.dx, run.first.dy);
+      for (final o in run.skip(1)) {
+        fill.lineTo(o.dx, o.dy);
+      }
+      for (final o in runFloor.reversed) {
+        fill.lineTo(o.dx, o.dy);
+      }
+      fill.close();
+      canvas.drawPath(fill, Paint()..color = const Color(0xCC0A0E14));
+
+      final ridge = Path()..moveTo(run.first.dx, run.first.dy);
+      for (final o in run.skip(1)) {
+        ridge.lineTo(o.dx, o.dy);
+      }
+      canvas.drawPath(
+        ridge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6
+          ..color = const Color(0xAA6B8299),
+      );
+      run = [];
+      runFloor = [];
+    }
+
+    for (var az = 0.0; az <= 360.0; az += 0.5) {
+      final top = at(az, profile.altitudeAt(az));
+      final bottom = at(az, floor);
+      if (top == null || bottom == null) {
+        flush();
+        continue;
+      }
+      run.add(top);
+      runFloor.add(bottom);
+    }
+    flush();
   }
 
   /// Ufuk uzerinde yon isaretleri (K, KD, D, ...).
@@ -369,6 +436,7 @@ class SkyPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SkyPainter old) =>
+      old.horizonProfile != horizonProfile ||
       old.sky != sky ||
       old.centerAzimuthDegrees != centerAzimuthDegrees ||
       old.centerAltitudeDegrees != centerAltitudeDegrees ||
