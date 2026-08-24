@@ -62,9 +62,13 @@ def build_frame(ra0, dec0, roll, parity, mag_limit=6.0, fwhm=2.2,
     return img, truth
 
 
-def check(label, ra0, dec0, roll, parity, **kw):
+def check(label, ra0, dec0, roll, parity, pointing_error_deg=0.0, **kw):
+    """[pointing_error_deg]: kullanicinin sandigi merkez ile gercek
+    merkez arasindaki fark. Elle nisan alan biri 5-15 derece rahat
+    sasar; arac buna dayanikli olmali."""
     img, truth = build_frame(ra0, dec0, roll, parity, **kw)
-    sol, detected, cat = ident.identify(img, ra0, dec0, FOCAL, PITCH,
+    guess_ra = ra0 + pointing_error_deg / np.cos(np.radians(dec0))
+    sol, detected, cat = ident.identify(img, guess_ra, dec0, FOCAL, PITCH,
                                         mag_limit=kw.get("mag_limit", 6.0))
     if sol is None:
         print(f"{label:<42} COZUM YOK")
@@ -109,6 +113,17 @@ def main() -> int:
     ok &= check("4 sahte tepe (sicak piksel)", 279.235, 38.784, 60.0, 1,
                 spurious=4)
     ok &= check("odak bozuk (FWHM 5 px)", 279.235, 38.784, 60.0, 1, fwhm=5.0)
+
+    print()
+    # NISAN HATASI — gercek kullanim kosulu.
+    #
+    # Ilk surum yalnizca donme acisini tariyordu ve merkez tahminine
+    # guveniyordu. Olculdu: 1 DERECELIK sapma tanimayi tamamen
+    # cokertiyordu (1 derece = 42 piksel, tolerans 6 piksel).
+    # Cift-aralik eslestirmesi bunu cozdu.
+    for err in [1.0, 5.0, 15.0, 25.0]:
+        ok &= check(f"nisan hatasi {err:.0f} derece", 279.235, 38.784,
+                    60.0, 1, pointing_error_deg=err)
 
     print("-" * 92)
     print("SONUC:", "TUM TESTLER GECTI" if ok else "KALDI")

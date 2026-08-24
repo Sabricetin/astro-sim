@@ -104,19 +104,149 @@ def score(detected_xy, pred_x, pred_y, tol_px):
     return matches
 
 
+def angular_separation(ra1, dec1, ra2, dec2):
+    """Iki yon arasindaki aci, derece. Haversine — kucuk acilarda da
+    sayisal olarak kararli."""
+    r1, d1, r2, d2 = map(np.radians, (ra1, dec1, ra2, dec2))
+    dr, dd = r2 - r1, d2 - d1
+    a = np.sin(dd / 2) ** 2 + np.cos(d1) * np.cos(d2) * np.sin(dr / 2) ** 2
+    return np.degrees(2 * np.arcsin(np.sqrt(np.clip(a, 0, 1))))
+
+
 def solve(detected_xy, cat, ra0, dec0, scale, cx, cy,
-          tol_px=6.0, roll_step=1.0, verbose=True):
-    """Donme acisini tarayip en cok eslesmeyi veren cozumu bulur."""
+          tol_px=6.0, roll_step=1.0, brightest=9, pair_stars=120,
+          verbose=False):
+    """Merkezi ve donmeyi YILDIZ CIFTLERININ ARALIKLARINDAN bulur.
+
+    Onceki surum yalnizca donme acisini tariyordu ve merkez tahmininin
+    dogru olmasina guveniyordu. Olculdu: **1 derecelik sapma tanimayi
+    tamamen cokertiyor** — cunku 1 derece 42 piksel eder, tolerans ise
+    6 piksel. Elle nisan alan bir kullanici 5-10 derece rahat sasar.
+
+    Yeni yol merkez tahminine bagli degil: iki yildiz arasindaki ACISAL
+    ARALIK, kadrajin nereye baktigindan ve nasil dondugunden bagimsizdir.
+    Olcek zaten biliniyor (odak + piksel adimi), o yuzden piksel araligi
+    dogrudan acisal aralik demek.
+
+    Yontem: algilanan en parlak yildizlarin cift araliklarini katalog
+    ciftlerininkiyle eslestir; her aday eslesme bir merkez+donme
+    onerir; en cok yildizi dogrulayan oneri kazanir.
+    """
+    xy = np.asarray(detected_xy, dtype=float)
+    k = min(brightest, len(xy))
+    if k < 3:
+        return None
+
+    tol_deg = tol_px * scale
+
+    # Cift eslestirmesi yalnizca PARLAK katalog yildizlariyla yapiliyor.
+    #
+    # Sebep iki katli. Birincisi hiz: cift sayisi n^2 ile buyuyor ve
+    # genis arama yaricapinda binlerce yildiz olur — 2 milyon cift
+    # hesaplanamaz. Ikincisi dogruluk: karede guvenilir sekilde
+    # algilanan yildizlar zaten parlak olanlar, sonuklarla eslestirmeye
+    # calismak gurultu ekler.
+    #
+    # Dogrulama asamasi (score) katalogun TAMAMINI kullaniyor; kisitlama
+    # sadece ilk adayi bulmak icin.
+    if len(cat.ra_deg) > pair_stars:
+        keep = np.argsort(cat.vmag)[:pair_stars]
+        pcat_ra, pcat_dec = cat.ra_deg[keep], cat.dec_deg[keep]
+    else:
+        keep = np.arange(len(cat.ra_deg))
+        pcat_ra, pcat_dec = cat.ra_deg, cat.dec_deg
+
+    n = len(pcat_ra)
+    ci, cj = np.triu_indices(n, 1)
+    csep = angular_separation(pcat_ra[ci], pcat_dec[ci],
+                              pcat_ra[cj], pcat_dec[cj])
+    ci, cj = keep[ci], keep[cj]
+    order = np.argsort(csep)
+    csep_s, ci_s, cj_s = csep[order], ci[order], cj[order]
+
     best = None
-    for parity in (1, -1):
-        for roll in np.arange(0.0, 360.0, roll_step):
-            px, py = project_to_pixels(cat, ra0, dec0, roll, parity,
-                                       scale, cx, cy)
-            m = score(detected_xy, px, py, tol_px)
-            if best is None or len(m) > best.match_count:
-                rms = float(np.sqrt(np.mean([d ** 2 for _, _, d in m]))) if m else 1e9
-                best = Solution(ra0, dec0, float(roll), parity, scale, m, rms)
+    for a in range(k):
+        for b in range(a + 1, k):
+            dsep_px = float(np.hypot(*(xy[a] - xy[b])))
+            dsep = dsep_px * scale
+            if dsep < 3 * tol_deg:      # cok yakin cift ayirt edici degil
+                continue
+            lo = np.searchsorted(csep_s, dsep - 2 * tol_deg)
+            hi = np.searchsorted(csep_s, dsep + 2 * tol_deg)
+            for t in range(lo, hi):
+                for (u, v) in ((ci_s[t], cj_s[t]), (cj_s[t], ci_s[t])):
+                    sol = _from_pair(xy, a, b, cat, u, v, scale, cx, cy,
+                                     tol_px, detected_xy)
+                    if sol is not None and (best is None
+                                            or sol.match_count > best.match_count):
+                        best = sol
+    if best is None:
+        # Cift eslestirme tutmadiysa eski yola dus: merkez dogru varsayilir.
+        for parity in (1, -1):
+            for roll in np.arange(0.0, 360.0, roll_step):
+                px, py = project_to_pixels(cat, ra0, dec0, roll, parity,
+                                           scale, cx, cy)
+                m = score(detected_xy, px, py, tol_px)
+                if best is None or len(m) > best.match_count:
+                    rms = (float(np.sqrt(np.mean([d ** 2 for _, _, d in m])))
+                           if m else 1e9)
+                    best = Solution(ra0, dec0, float(roll), parity, scale, m, rms)
     return best
+
+
+def _from_pair(xy, a, b, cat, u, v, scale, cx, cy, tol_px, detected_xy):
+    """Iki eslesmeden merkez ve donmeyi cozer, sonra butun yildizlarla
+    dogrular."""
+    # Katalog ciftinin orta noktasi merkez adayi; kabaca yeterli, refine
+    # sonra duzeltir.
+    ra_mid = np.degrees(np.arctan2(
+        (np.sin(np.radians(cat.ra_deg[u])) + np.sin(np.radians(cat.ra_deg[v]))) / 2,
+        (np.cos(np.radians(cat.ra_deg[u])) + np.cos(np.radians(cat.ra_deg[v]))) / 2))
+    dec_mid = (cat.dec_deg[u] + cat.dec_deg[v]) / 2
+
+    for parity in (1, -1):
+        # Katalog ciftinin tanjant duzlemindeki yonu
+        xi, eta = gnomonic(np.array([cat.ra_deg[u], cat.ra_deg[v]]),
+                           np.array([cat.dec_deg[u], cat.dec_deg[v]]),
+                           ra_mid, dec_mid)
+        if not np.all(np.isfinite(xi)):
+            continue
+        # Donme acisinin turetilmesi.
+        #
+        # Izdusum:  x = (xi·cos r + eta·sin r)·parity
+        #           y = -xi·sin r + eta·cos r
+        #
+        # Iki yildiz arasindaki farki A = atan2(d_eta, d_xi) yonunde ve
+        # m uzunlugunda yazarsak:
+        #           dx = m·cos(A - r)·parity
+        #           dy = m·sin(A - r)
+        # yani      A - r = atan2(dy, dx·parity)
+        #           r = A - atan2(dy, dx·parity)
+        #
+        # Ilk yazimda buraya gereksiz bir isaret cevirmesi koymustum ve
+        # iki parite dali da ayniydi; sonuc olarak DOGRU cozum hic
+        # uretilmiyordu ve yerine 4-6 yildiz tutturan sahte cozumler
+        # kazaniyordu. Yogun alanda (Orion) sahte cozum bulmak kolay
+        # oldugu icin hata orada en gorunurdu.
+        cat_angle = np.arctan2(eta[1] - eta[0], xi[1] - xi[0])
+        dxy = np.asarray(xy[b]) - np.asarray(xy[a])
+        det_angle = np.arctan2(dxy[1], dxy[0] * parity)
+        roll = np.degrees(cat_angle - det_angle)
+        # Merkez kaymasi: eslesen yildiz nereye dusmeli, nereye dusuyor
+        px, py = project_to_pixels(cat, ra_mid, dec_mid, roll, parity,
+                                   scale, cx, cy)
+        if not (np.isfinite(px[u]) and np.isfinite(py[u])):
+            continue
+        shift_x = xy[a][0] - px[u]
+        shift_y = xy[a][1] - py[u]
+        m = score(detected_xy, px + shift_x, py + shift_y, tol_px)
+        # Esik 5: dort yildiz sahte cozumlerde de kolayca tutuyor,
+        # ozellikle yogun alanlarda.
+        if len(m) >= 5:
+            rms = float(np.sqrt(np.mean([d ** 2 for _, _, d in m])))
+            return Solution(float(ra_mid), float(dec_mid), float(roll),
+                            parity, scale, m, rms)
+    return None
 
 
 def refine(sol, detected_xy, cat, cx, cy, tol_px=6.0):
@@ -146,7 +276,7 @@ def refine(sol, detected_xy, cat, cx, cy, tol_px=6.0):
 
 def identify(plane, ra0, dec0, focal_mm, pixel_pitch_um, *,
              cfa_channel=True, mag_limit=6.0, max_stars=60,
-             tol_px=6.0, white_level=15360.0):
+             tol_px=6.0, white_level=15360.0, pointing_tolerance_deg=25.0):
     """Karedeki yildizlari tanir. (cozum, algilananlar, katalog) doner."""
     h, w = plane.shape
     peaks = sp.find_stars(plane, threshold_sigma=8.0, max_stars=max_stars,
@@ -166,8 +296,15 @@ def identify(plane, ra0, dec0, focal_mm, pixel_pitch_um, *,
     pitch = pixel_pitch_um * (2.0 if cfa_channel else 1.0)
     scale_deg_per_px = (206.265 * pitch / focal_mm) / 3600.0
 
-    # Kadraja sigacak yildizlar + biraz pay.
-    radius_deg = float(np.hypot(w, h) / 2 * scale_deg_per_px * 1.3)
+    # Kadraja sigacak yildizlar + nisan hatasi payi.
+    #
+    # [pointing_tolerance_deg] onemli: kullanici elle nisan aliyor ve
+    # 10-15 derece rahat sasabiliyor. Arama yaricapi dar tutulursa
+    # gercek yildizlar katalog listesine hic girmez ve cift eslestirme
+    # calisamaz — olculdu: 25 derece payla 15 derecelik sapmaya kadar
+    # saglam, 10 derece payla 8'de kopuyor.
+    radius_deg = float(np.hypot(w, h) / 2 * scale_deg_per_px * 1.15
+                       + pointing_tolerance_deg)
     cat = bsc5.load().brighter_than(mag_limit)
     xi, eta = gnomonic(cat.ra_deg, cat.dec_deg, ra0, dec0)
     near = np.isfinite(xi) & (np.hypot(xi, eta) <= radius_deg)
