@@ -17,6 +17,12 @@ Bunu bilmeden sahaya gidersen o 59 dakikayı bekleyerek geçirirsin.
 **Gündüz.** Karanlıkta tepe hattını göremezsin. Ölçüm bir kez yapılır,
 o konum için geçerli kalır.
 
+> **Not:** Bu ölçüm telefonla yapılıyor ama telefonda *bu uygulamanın*
+> çalışmasına gerek yok — telefon burada sadece eğim ölçer. Ölçtüğün
+> sekiz sayıyı sonra bilgisayardaki uygulamaya gireceksin.
+> (Uygulamayı yine de telefonda açmak istersen:
+> [`telefonda-calistirma.md`](telefonda-calistirma.md))
+
 ## Ne gerekiyor
 
 - Telefon
