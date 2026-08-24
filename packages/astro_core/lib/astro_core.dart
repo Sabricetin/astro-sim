@@ -39,6 +39,7 @@ export 'src/ephemeris/sun.dart';
 export 'src/coords/precession.dart';
 export 'src/coords/refraction.dart';
 export 'src/coords/types.dart';
+export 'src/horizon/horizon.dart';
 export 'src/math/angles.dart';
 export 'src/optics/gnomonic.dart';
 export 'src/planning/night_plan.dart';

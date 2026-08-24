@@ -473,6 +473,28 @@ ZP/μ_sky/FWHM'i çıkarır.
 
 **Sıra hakkında düşün:** Bu faz "derinleşme" bloğunda ama senin ana hedefin (galaktik merkez, ~24° yükseklik) neredeyse her konumda bir tepe tarafından kesilir. Yani ufuk profili senin için lüks bir farklılaştırıcı değil, **ana senaryonun ön koşulu.** 7.2'yi (ışık kirliliği) zaten Faz 0'da kısmen yaptın. 7.3–7.6'yı Faz 6'nın önüne almayı düşün — Samanyolu görselinden önce "bu hedefi görebilir misin" sorusuna cevap vermek daha değerli.
 
+### Uygulama sırası kararı — 24 Ağustos 2026: elle girilen ufuk önce
+
+7.3 (DEM verisi) internet gerektiriyor ve indirme/önbellek tasarımı
+istiyor. Ama ufkun **değerinin tamamı** DEM'e bağlı değil: profil elle
+de girilebilir ve o hâliyle bile plan hesabını doğru yapar.
+
+Üstelik elle girilen profil çoğu zaman **daha doğrudur** — DEM ağaçları,
+binaları ve duvarı göremez.
+
+Bu yüzden 7.4–7.6'nın çekirdeği önce yazıldı (`Horizon` tipi,
+`planNight` entegrasyonu, engellenen aralık raporu). DEM tabanlı
+otomatik profil sonradan aynı tipi doldurmakla yetinecek —
+`Horizon.fromSamples` zaten onu bekliyor.
+
+**Ölçülen değer:** Mersin'den galaktik merkez, 15 Temmuz. Düz ufukta
+pencere 165 dk. Güneyde 23°'lik bir tepe varsa **106 dk** — 59 dakika,
+yani gecenin üçte birinden fazlası kayboluyor. 18°'lik bina sırası ise
+hiç etkilemiyor, çünkü hava kütlesi eşiği (20°) zaten daha kısıtlayıcı.
+
+Bu ikisinin farkı önemli: eşik ve ufuk **birbirinin yerine geçmiyor.**
+Biri fizik (sönüm), öteki coğrafya (engel). Etkin eşik ikisinin büyüğü.
+
 **Karar gerekiyor — offline çelişkisi:** 9.4 "offline zorunluluk" diyor, ama DEM tile'ları indirmeden ufuk profili hesaplanmaz. Üç seçenek, birini seç ve buraya yaz:
 1. Ufuk profilini konum başına bir kez hesapla, sonucu (360 float, ~1.5 KB) cihazda önbelleğe al — sahada internet gerekmez, sadece plan yaparken gerekir. **Önerim bu.**
 2. DEM tile'larını indir ve sakla — offline tam çalışır ama depolama maliyeti yüksek

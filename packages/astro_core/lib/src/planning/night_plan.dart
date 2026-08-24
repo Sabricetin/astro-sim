@@ -12,9 +12,12 @@
 /// veriyor. Tek ekranda birlestirmek asil deger.
 library;
 
+import 'dart:math' as math;
+
 import '../coords/horizontal.dart';
 import '../coords/types.dart';
 import '../ephemeris/moon.dart';
+import '../horizon/horizon.dart';
 import '../ephemeris/twilight.dart';
 import '../math/angles.dart';
 import '../radiometry/sky_brightness.dart';
@@ -45,6 +48,12 @@ class TimeRange {
 class SkyConditions {
   final DateTime utc;
   final double targetAltitudeDegrees;
+
+  /// Hedefin azimutu, kuzeyden dogu yonunde. Ufuk profili yalnizca
+  /// yukseklige degil YONE de bagli oldugu icin gerekli: bati sirti
+  /// dogu ufkunu kapatmaz.
+  final double targetAzimuthDegrees;
+
   final double moonAltitudeDegrees;
   final double moonIlluminatedFraction;
 
@@ -59,6 +68,7 @@ class SkyConditions {
   const SkyConditions({
     required this.utc,
     required this.targetAltitudeDegrees,
+    required this.targetAzimuthDegrees,
     required this.moonAltitudeDegrees,
     required this.moonIlluminatedFraction,
     required this.moonSeparationDegrees,
@@ -88,6 +98,13 @@ class NightPlan {
   /// Ay'in battigi an. Yoksa null.
   final DateTime? moonSet;
 
+  /// Plani hesaplarken kullanilan ufuk. Duz ise null.
+  final Horizon? horizon;
+
+  /// Hava kutlesi esigi — ufuktan ayri tutuluyor cunku ikisi farkli
+  /// sey: biri fizik (sonum), oteki cografya (engel).
+  final double minimumAltitudeDegrees;
+
   const NightPlan({
     required this.darkness,
     required this.samples,
@@ -95,7 +112,53 @@ class NightPlan {
     required this.best,
     required this.moonRise,
     required this.moonSet,
+    this.horizon,
+    this.minimumAltitudeDegrees = 20.0,
   });
+
+  /// Hedefin hava kutlesi esigini gectigi ama UFKUN hala kapattigi
+  /// aralik. Yoksa null.
+  ///
+  /// Aracin sahada en cok ise yarayan uyarisi bundan cikiyor:
+  /// "Merkez 01:40'ta 20 dereceyi geciyor ama bati sirti 26 derece —
+  /// 03:10'a kadar goremezsin." Bu bilgi olmadan kullanici saatlerce
+  /// bosuna bekler.
+  TimeRange? get blockedByHorizon {
+    final h = horizon;
+    if (h == null || h.isFlat) return null;
+    DateTime? start, end;
+    for (final s in samples) {
+      if (!s.isDark) continue;
+      final aboveThreshold = s.targetAltitudeDegrees >= minimumAltitudeDegrees;
+      final blocked =
+          s.targetAltitudeDegrees < h.altitudeAt(s.targetAzimuthDegrees);
+      if (aboveThreshold && blocked) {
+        start ??= s.utc;
+        end = s.utc;
+      } else if (start != null && !blocked) {
+        break; // ilk kesintisiz engel araligi
+      }
+    }
+    if (start == null || end == null || start == end) return null;
+    return TimeRange(start, end);
+  }
+
+  /// Ufuk yuzunden kaybedilen sure. Duz ufukta Duration.zero.
+  ///
+  /// "Bu konum sana kac dakikaya mal oluyor" sorusunun cevabi.
+  Duration get lostToHorizon {
+    final h = horizon;
+    if (h == null || h.isFlat) return Duration.zero;
+    var lost = 0;
+    for (final s in samples) {
+      if (!s.isDark) continue;
+      if (s.targetAltitudeDegrees < minimumAltitudeDegrees) continue;
+      if (s.targetAltitudeDegrees < h.altitudeAt(s.targetAzimuthDegrees)) {
+        lost++;
+      }
+    }
+    return Duration(minutes: lost);
+  }
 
   /// Gecenin ortasindaki Ay dolulugu — arayuzde tek sayiyla ozet.
   double get moonIlluminatedFraction => samples.isEmpty
@@ -133,6 +196,7 @@ NightPlan planNight({
   double minimumAltitudeDegrees = 20.0,
   double baseSkyMagPerSquareArcsec = 21.5,
   Duration step = const Duration(minutes: 1),
+  Horizon? horizon,
 }) {
   final darkness = darknessWindow(aroundUtc: aroundUtc, observer: observer);
 
@@ -200,6 +264,7 @@ NightPlan planNight({
       SkyConditions(
         utc: t,
         targetAltitudeDegrees: targetHorizontal.altitudeDegrees,
+        targetAzimuthDegrees: targetHorizontal.azimuthDegrees,
         moonAltitudeDegrees: moonHorizontal.altitudeDegrees,
         moonIlluminatedFraction: moon.illuminatedFraction,
         moonSeparationDegrees: separation,
@@ -220,7 +285,14 @@ NightPlan planNight({
   DateTime? openedAt;
   DateTime? lastGood;
   for (final s in samples) {
-    final ok = s.isDark && s.targetAltitudeDegrees >= minimumAltitudeDegrees;
+    // Iki ayri kosul, ikisi de saglanmali:
+    //   - hava kutlesi esigi (minimumAltitudeDegrees): fizik
+    //   - ufuk (horizon): cografya
+    // Birbirinin yerine gecmezler. 20 derece esigi sonum icin, sirt
+    // ise hedefi hic gostermiyor diye. Etkin esik ikisinin BUYUGU.
+    final blocking = horizon?.altitudeAt(s.targetAzimuthDegrees) ?? 0.0;
+    final threshold = math.max(minimumAltitudeDegrees, blocking);
+    final ok = s.isDark && s.targetAltitudeDegrees >= threshold;
     if (ok) {
       openedAt ??= s.utc;
       lastGood = s.utc;
@@ -246,5 +318,7 @@ NightPlan planNight({
     best: best,
     moonRise: moonRise,
     moonSet: moonSet,
+    horizon: horizon,
+    minimumAltitudeDegrees: minimumAltitudeDegrees,
   );
 }
