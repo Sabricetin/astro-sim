@@ -89,16 +89,39 @@ class CameraSettings {
   double get fiveHundredRule => fiveHundredRuleSeconds(focalLengthMm);
 
   /// Yaygin diyafram degerleri (tam duraklar ve astro icin sik kullanilanlar).
-  static const apertures = [1.4, 1.8, 2.0, 2.8, 4.0, 5.6, 8.0];
+  /// Diyafram degerleri.
+  ///
+  /// Kisik degerler (f/11-f/22) sadece bir tercih degil: Faz 0.B'nin
+  /// sonum dizisinde parlak yildizin doymasini engellemek icin
+  /// gerekiyorlar. Vega, 18 mm f/3.5'te dolum kapasitesini kat kat
+  /// asiyor; f/22'de 1 saniyeye kadar temiz kaliyor.
+  static const apertures = [
+    1.4,
+    1.8,
+    2.0,
+    2.8,
+    3.5,
+    4.0,
+    5.6,
+    8.0,
+    11.0,
+    16.0,
+    22.0,
+  ];
 
   /// Yaygin odak uzunluklari, mm.
+  ///
+  /// 18 ve 55 kit lensin (EF-S 18-55) uclari — en yaygin baslangic
+  /// ekipmani ve projenin referans gövdesinde kullanilan lens.
   static const focalLengths = [
     8.0,
     14.0,
+    18.0,
     20.0,
     24.0,
     35.0,
     50.0,
+    55.0,
     85.0,
     135.0,
     200.0,

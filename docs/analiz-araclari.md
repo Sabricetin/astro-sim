@@ -51,7 +51,7 @@ Tek başına da kullanılabilir:
 
 ```bash
 ./.venv/bin/python tools/identify_stars.py kare.CR2 \
-  --ra 279.235 --dec 38.784 --focal 14 --pixel-pitch 3.72
+  --ra 279.235 --dec 38.784 --focal 18 --pixel-pitch 3.72
 ```
 
 Sıra tesadüf değil: karanlık akım önce ölçülür, çünkü fon hesabı onu

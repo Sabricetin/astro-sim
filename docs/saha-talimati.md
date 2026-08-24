@@ -111,7 +111,8 @@ duraklarını daha erken yakalarsın. Eylül kaçarsa buradan devam.
 
 ## Yanına al
 
-- Fotoğraf makinesi, **tek bir lens** (gece boyunca değiştirmeyeceksin)
+- Fotoğraf makinesi ve **EF-S 18-55mm** kit lens — gece boyunca
+  **18 mm**'de kalacak, zoom halkasına da bant yapıştır
 - Tripod, uzaktan kumanda veya 2 sn gecikmeli deklanşör
 - **Yedek pil** (soğuk pili yer, üşüyen pil poz süresini etkilemez ama
   gecenin ortasında biter)
@@ -162,6 +163,22 @@ fon parlaklığını çekeceğiz; koordinat yoksa karşılaştırma yapılamaz.
 Telefonun harita uygulamasından ondalık derece olarak al (37.06621,
 37.38334 gibi), "37°3'58" biçiminde değil.
 
+## Ekipman — senin gerçek donanımın
+
+Bu plan **Canon EOS 760D + EF-S 18-55mm f/3.5-5.6** için hesaplandı.
+Başka lens varsayımı yok.
+
+| | |
+|---|---|
+| Odak | **18 mm** (gece boyunca sabit) |
+| Kadraj | 63.6° × 45.0° |
+| Ölçek | 42.6″/piksel |
+| En açık diyafram (18 mm'de) | f/3.5 |
+| NPF sınırı (f/3.5, 18 mm) | ~13–17 s |
+
+**Zoom halkasına da bant yapıştır.** 18 mm'den kayarsa ölçek değişir ve
+bütün hesap kayar — bunu ancak evde fark edersin.
+
 ## Makine ayarları
 
 Aynı liste, 0.A.6'daki gibi. Ekstra olarak:
@@ -183,8 +200,8 @@ bunu ancak evde fark edersin.
 | **Gece boyunca sabit** | lens, odak, IS kapalı, parazit azaltma kapalı |
 | **Diziye göre değişir** | **diyafram**, poz süresi, ISO |
 
-Dizi B kısılmış diyaframla çekilir (parlak yıldız doymasın diye),
-Dizi A açık diyaframla. Bu **kasıtlı** ve araçlar bunu biliyor:
+Dizi B **f/22**'de çekilir (parlak yıldız doymasın diye), Dizi A
+**f/3.5**'te. Bu **kasıtlı** ve araçlar bunu biliyor:
 sıfır noktası bir diyaframdan diğerine matematiksel olarak taşınıyor
 (`ZP(N) = ZP_ref + 5·log10(N_ref/N)`).
 
@@ -208,6 +225,8 @@ geçersiz sayar ve uyarır.
 neredeyse başucu — ışık kirliliği gradyanı orada en zayıf. Mersin gibi
 sahil şehrinde bu ekstra önemli: alçak baktığın her yön şehir veya deniz
 üstü ışığı taşır.
+
+**Ayar:** 18 mm, **f/3.5** (sonuna kadar açık), ISO 1600.
 
 **A1 — poz merdiveni** (ISO 1600 sabit, her basamakta 3 kare):
 
@@ -248,13 +267,13 @@ aynı ayar — değişen tek şey havanın kalınlığı.
 
 Dizi A'nın ayarını buraya taşıma. Sebebi hesaplandı:
 
-> **Vega, 14 mm f/2.8 15 s ISO 1600'de dolum kapasitesini 161 kat aşıyor.**
+> **Vega, 18 mm f/3.5 15 s ISO 1600'de dolum kapasitesini kat kat aşıyor.**
 
 Doymuş yıldızın fotometrisi anlamsızdır — sinyali artmaz, o yüzden
 sönüm hiç ölçülemez. Planlanan ayarla çekseydin Dizi B'nin **tek bir
 karesi bile kullanılamazdı.**
 
-Geniş açıda bu sezgiye aykırı: 14 mm'de ölçek 54.8″/piksel, yani yıldızın
+Geniş açıda bu sezgiye aykırı: 18 mm'de ölçek 42.6″/piksel, yani yıldızın
 tüm ışığı bir-iki piksele iniyor. Teleskopta yayılan ışık burada
 yığılıyor.
 
@@ -264,7 +283,7 @@ Diyaframı kısıp pozu kısaltacaksın, ama ne kadar? QE ve T henüz
 ölçülmediği için hesap ±2 kat belirsiz. O yüzden ölçerek bul:
 
 1. Vega'yı ortala, odağı yap.
-2. **f/11, 1/3 s, ISO 1600** ile tek kare çek.
+2. **f/22, 1 s, ISO 1600** ile tek kare çek.
 3. Sor:
    ```bash
    ./.venv/bin/python tools/check_star.py <kare.CR2>
@@ -272,9 +291,17 @@ Diyaframı kısıp pozu kısaltacaksın, ama ne kadar? QE ve T henüz
 
 | Sonuç | Yap |
 |---|---|
-| DOYMUS | bir durak kıs (f/13, f/16) |
+| DOYMUS | pozu kısalt (1/2 s, sonra 1/4 s) |
 | %40–70 | **tamam, diziye başla** |
-| çok sönük | bir durak aç (f/9, f/8) |
+| çok sönük | f/16'ya aç |
+
+Hesap f/22 ve 1 s'de tepe pikselin dolumun **%69**'unda kalacağını
+söylüyor — tam hedefte. Ama QE ve T henüz ölçülmediği için tahmin
+±2 kat belirsiz; o yüzden ölçerek doğruluyorsun.
+
+**Neden f/22 gibi çok kısık bir diyafram:** Vega parlak, geniş açı
+ışığı tek piksele yığıyor ve sensörün kapasitesi küçük. Kısmaktan başka
+yol yok. Bu dizi *fotoğraf* değil *ölçüm* — görüntü kalitesi önemsiz.
 
 Bulduğun ayarı **gece boyunca değiştirme** — sönüm ölçümü akış
 *oranlarına* bakıyor, sabit bir ayar tüm sistematikleri götürüyor.
@@ -319,6 +346,16 @@ bir model orada sessizce yanılır. Bu dizi tam o bölgeyi ölçüyor.
 
 Toplam: 7 × 5 = **35 kare**.
 
+### Dizi B ayar özeti
+
+| | |
+|---|---|
+| Odak | **18 mm** |
+| Diyafram | **f/22** (ölçerek doğrula) |
+| Poz | **1 s** |
+| ISO | 1600 |
+| Her durakta | 5 kare |
+
 ## Dizi C — Karanlık kareler (gecenin SONUNDA, ~20 dakika)
 
 Lens kapağı takılı, vizör kapalı (Canon'da vizör perdesi vardır; yoksa
@@ -346,11 +383,11 @@ sıcaklıkta olsun, çantaya sokup ısıtma.
 |---|---|
 | 20:45 | Sahada ol. Kurulum. GPS koordinatını yaz. |
 | 21:00 | **Odak**: canlı görüntü, 10× zoom, Vega'ya. Odak halkasına bant. |
-| 21:15 | Dizi B ayarını bul: f/11 1/3 s tek kare → `check_star.py` → %40–70 olana kadar diyaframı oynat. |
+| 21:15 | Dizi B ayarını bul: **f/22, 1 s** tek kare → `check_star.py` → %40–70 olana kadar pozu oynat. |
 | **21:41** | **B başlar:** Vega 70°, 5 kare |
 | 22:32 | B — Vega 60°, 5 kare |
 | 23:24 | B — Vega 50°, 5 kare |
-| **00:00** | **A dizisi** — Pegasus tepede (78°). Ayarı A'ya çevir: f/2.8, ISO 1600. 33 kare, ~15 dk |
+| **00:00** | **A dizisi** — Pegasus tepede (78°). Ayarı A'ya çevir: **f/3.5**, ISO 1600. 33 kare, ~15 dk |
 | 00:18 | B — Vega 40°, 5 kare (ayarı B'ye geri al) |
 | 01:13 | B — Vega 30°, 5 kare |
 | 01:42 | B — Vega 25°, 5 kare |

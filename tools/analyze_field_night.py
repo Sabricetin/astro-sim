@@ -54,8 +54,8 @@ def main() -> int:
     ap.add_argument("--target-mag", type=float, default=0.03,
                     help="Dizi B'deki hedef yildizin V kadiri (Vega: 0.03)")
     ap.add_argument("--pixel-pitch-um", type=float, default=3.72)
-    ap.add_argument("--focal-length-mm", type=float, default=14.0,
-                    help="Dizi A'nin odak uzunlugu")
+    ap.add_argument("--focal-length-mm", type=float, default=18.0,
+                    help="Dizi A'nin odak uzunlugu (kit lens: 18)")
     ap.add_argument("--focal-length-b-mm", type=float, default=None,
                     help="Dizi B'nin odak uzunlugu (verilmezse A ile ayni)")
     args = ap.parse_args()
