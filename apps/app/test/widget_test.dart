@@ -6,6 +6,8 @@ import 'package:astro_sim/src/report_panel.dart';
 import 'package:astro_sim/src/site.dart';
 import 'package:astro_sim/src/sky_model.dart';
 import 'package:astro_sim/src/calibration_panel.dart';
+import 'package:astro_sim/src/horizon_panel.dart';
+import 'package:astro_sim/src/camera_panel.dart';
 import 'package:astro_sim/src/camera_settings.dart';
 import 'package:astro_sim/src/night_panel.dart';
 import 'package:astro_sim/src/star_style.dart';
@@ -630,6 +632,142 @@ void main() {
       expect(find.textContaining('OLCUM BEKLEYEN'), findsNothing);
       expect(find.textContaining('SNR'), findsOneWidget);
       expect(find.textContaining('histogramin'), findsOneWidget);
+    });
+  });
+
+  group('Responsive — telefon genisliginde tasma yok', () {
+    // Flutter tasma hatasini exception olarak bildirir; takeException
+    // null degilse duzen bozuk demektir. Gozle kontrolden farkli olarak
+    // bu her degisiklikte otomatik calisir.
+    final canon = cameras.firstWhere((c) => c.name == 'Canon EOS 760D');
+
+    /// Yaygin telefon ve tablet genislikleri (mantiksal piksel).
+    const widths = <String, double>{
+      'kucuk telefon': 320,
+      'telefon': 390,
+      'buyuk telefon': 430,
+      'telefon yatay': 740,
+      'tablet': 1024,
+    };
+
+    Future<void> pumpAt(WidgetTester tester, Widget child, double width) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(useMaterial3: true),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: Padding(padding: const EdgeInsets.all(8), child: child),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    for (final entry in widths.entries) {
+      testWidgets('kamera paneli — ${entry.key}', (tester) async {
+        await pumpAt(
+          tester,
+          CameraPanel(
+            settings: CameraSettings(camera: canon),
+            onChanged: (_) {},
+            showFrame: true,
+            onShowFrameChanged: (_) {},
+          ),
+          entry.value,
+        );
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('ufuk paneli — ${entry.key}', (tester) async {
+        await pumpAt(
+          tester,
+          HorizonPanel(
+            altitudes: const [5, 10, 15, 20, 25, 20, 15, 10],
+            onChanged: (_) {},
+            enabled: true,
+            onEnabledChanged: (_) {},
+          ),
+          entry.value,
+        );
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('rapor paneli — ${entry.key}', (tester) async {
+        await pumpAt(
+          tester,
+          ReportPanel(
+            settings: CameraSettings(camera: canon, iso: 1600),
+            targetName: 'Galaktik merkez',
+            altitudeDegrees: 24,
+            declinationDegrees: -29,
+            vMagnitude: 8,
+            colorIndexBV: 0.6,
+            onChanged: (_) {},
+          ),
+          entry.value,
+        );
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('kalibrasyon paneli — ${entry.key}', (tester) async {
+        await pumpAt(
+          tester,
+          CalibrationPanel(loaded: null, onChanged: (_) {}),
+          entry.value,
+        );
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('plan paneli — ${entry.key}', (tester) async {
+        final plan = planNight(
+          target: Equatorial.fromHours(
+            rightAscensionHours: 17.76,
+            declinationDegrees: -29.0,
+          ),
+          observer: sites.first.observer,
+          aroundUtc: DateTime.utc(2026, 7, 15, 22),
+          horizon: Horizon.fromPoints({
+            0.0: 0.0,
+            130.0: 23.0,
+            180.0: 23.0,
+            230.0: 23.0,
+            280.0: 0.0,
+          }),
+        );
+        await pumpAt(
+          tester,
+          NightPanel(
+            plan: plan,
+            targetName: 'Galaktik merkez',
+            currentUtc: DateTime.utc(2026, 7, 15, 22),
+            localOffset: const Duration(hours: 3),
+          ),
+          entry.value,
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('ufuk paneli en dar ekranda da butun yonleri gosteriyor', (
+      tester,
+    ) async {
+      await pumpAt(
+        tester,
+        HorizonPanel(
+          altitudes: const [0, 0, 0, 0, 0, 0, 0, 0],
+          onChanged: (_) {},
+          enabled: false,
+          onEnabledChanged: (_) {},
+        ),
+        320,
+      );
+      for (final (name, _) in HorizonPanel.directions) {
+        expect(find.text(name), findsOneWidget, reason: '$name yonu yok');
+      }
     });
   });
 }

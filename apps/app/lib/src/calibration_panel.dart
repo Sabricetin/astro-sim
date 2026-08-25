@@ -119,10 +119,14 @@ class _CalibrationPanelState extends State<CalibrationPanel> {
       ),
     ),
     const SizedBox(height: 8),
-    Row(
+    // Wrap, Row degil: dar ekranda uc dugme yan yana sigmiyor ve
+    // tasma hatasi veriyordu (390 px'te 26 piksel tasiyordu).
+    Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         FilledButton(onPressed: _apply, child: const Text('Yukle')),
-        const SizedBox(width: 8),
         TextButton(
           onPressed: () async {
             final data = await Clipboard.getData('text/plain');
@@ -133,8 +137,7 @@ class _CalibrationPanelState extends State<CalibrationPanel> {
           },
           child: const Text('Panodan yapistir'),
         ),
-        if (widget.loaded != null) ...[
-          const Spacer(),
+        if (widget.loaded != null)
           TextButton(
             onPressed: () => setState(() {
               _editing = false;
@@ -142,7 +145,6 @@ class _CalibrationPanelState extends State<CalibrationPanel> {
             }),
             child: const Text('Vazgec'),
           ),
-        ],
       ],
     ),
   ];
@@ -213,7 +215,8 @@ class _CalibrationPanelState extends State<CalibrationPanel> {
         ),
       ],
       const SizedBox(height: 10),
-      Row(
+      Wrap(
+        spacing: 8,
         children: [
           TextButton(
             onPressed: () => setState(() => _editing = true),

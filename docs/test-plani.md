@@ -396,6 +396,34 @@ değil. Bu, karartmanın gökyüzü koordinatlarında yapıldığının kanıtı
 **Bekle:** *"En yüksek engel 30.0°, G yönünde"* ve kapalı gökyüzü
 yüzdesi.
 
+## H. Telefon düzeni (responsive)
+
+Bunlar telefonda yapılır — `docs/telefonda-calistirma.md`'deki tarayıcı
+yoluyla.
+
+### H1 — Sekmeler simgeye dönüyor
+**Bekle:** Beş sekme metin yerine simge gösteriyor (📷 🌙 📊 ⛰ ⚙) ve
+hepsi tek satıra sığıyor.
+
+### H2 — Gökyüzü görünür kalıyor
+**Bekle:** Alt panel ekranın en fazla %58'ini kaplıyor; üstte harita
+duruyor. Uzun panellerde (Ufuk, Rapor) panel **kendi içinde** kayıyor.
+
+### H3 — Hiçbir yerde taşma çizgisi yok
+**Yap:** Beş sekmeyi de gez.
+**Bekle:** Sarı-siyah çizgili taşma şeridi hiçbir yerde çıkmıyor.
+**Not:** Bu otomatik teste de bağlandı, ama gerçek cihazda yazı tipi
+ölçeği farklı olabilir.
+
+### H4 — Yatay çevirince genişliyor
+**Yap:** Telefonu yatay çevir.
+**Bekle:** 600 pikseli geçince sekmeler yazıya dönüyor, durum kutusu
+geri geliyor.
+
+### H5 — Dokunmayla harita gezilebiliyor
+**Yap:** Haritada parmakla sürükle, iki parmakla kıstır ve döndür.
+**Bekle:** Bakış kayıyor, zoom ve döndürme çalışıyor.
+
 ## Notlar
 
 - Tüm saatler ekranda **yerel** (UTC+3), hesapta UTC. Yol haritası kuralı:

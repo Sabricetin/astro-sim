@@ -65,6 +65,7 @@ class CameraPanel extends StatelessWidget {
                   itemLabel: (c) =>
                       '${c.name}  ${c.megapixels.toStringAsFixed(0)} MP',
                   onChanged: (c) => onChanged(settings.copyWith(camera: c)),
+                  maxWidth: 175,
                 ),
                 _dropdown<double>(
                   label: 'Odak',
@@ -73,6 +74,7 @@ class CameraPanel extends StatelessWidget {
                   itemLabel: (f) => '${f.toStringAsFixed(0)} mm',
                   onChanged: (f) =>
                       onChanged(settings.copyWith(focalLengthMm: f)),
+                  maxWidth: 84,
                 ),
                 _dropdown<double>(
                   label: 'Diyafram',
@@ -80,6 +82,7 @@ class CameraPanel extends StatelessWidget {
                   items: CameraSettings.apertures,
                   itemLabel: (a) => 'f/$a',
                   onChanged: (a) => onChanged(settings.copyWith(aperture: a)),
+                  maxWidth: 76,
                 ),
                 FilterChip(
                   label: const Text('Dikey'),
@@ -152,13 +155,16 @@ class CameraPanel extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        '${status.label} — iz '
-                        '${settings.trailPixels.toStringAsFixed(1)} piksel',
-                        style: TextStyle(
-                          color: status.color,
-                          fontFamily: 'monospace',
-                          fontSize: 12,
+                      // Expanded: dar ekranda metin tasiyordu.
+                      Expanded(
+                        child: Text(
+                          '${status.label} — iz '
+                          '${settings.trailPixels.toStringAsFixed(1)} piksel',
+                          style: TextStyle(
+                            color: status.color,
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -172,12 +178,19 @@ class CameraPanel extends StatelessWidget {
     );
   }
 
+  /// Acilir liste.
+  ///
+  /// [maxWidth] gerekli: DropdownButton kendini EN GENIS ogesine gore
+  /// boyutlandirir. "Telefon (yaklasik)  12 MP" gibi uzun bir govde adi
+  /// 320 piksellik ekranda satiri tasiriyordu. Genislik sinirlanip
+  /// metin kirpiliyor; secim yine tam metinle yapiliyor.
   Widget _dropdown<T>({
     required String label,
     required T value,
     required List<T> items,
     required String Function(T) itemLabel,
     required ValueChanged<T> onChanged,
+    double maxWidth = 120,
   }) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
@@ -186,19 +199,26 @@ class CameraPanel extends StatelessWidget {
         label,
         style: const TextStyle(fontSize: 10, color: Color(0xFF6B8299)),
       ),
-      DropdownButton<T>(
-        value: value,
-        isDense: true,
-        underline: const SizedBox.shrink(),
-        style: const TextStyle(fontSize: 13, color: Color(0xFFDDE8F2)),
-        dropdownColor: const Color(0xFF10171F),
-        items: [
-          for (final item in items)
-            DropdownMenuItem(value: item, child: Text(itemLabel(item))),
-        ],
-        onChanged: (v) {
-          if (v != null) onChanged(v);
-        },
+      ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: DropdownButton<T>(
+          value: value,
+          isDense: true,
+          isExpanded: true,
+          underline: const SizedBox.shrink(),
+          style: const TextStyle(fontSize: 13, color: Color(0xFFDDE8F2)),
+          dropdownColor: const Color(0xFF10171F),
+          items: [
+            for (final item in items)
+              DropdownMenuItem(
+                value: item,
+                child: Text(itemLabel(item), overflow: TextOverflow.ellipsis),
+              ),
+          ],
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        ),
       ),
     ],
   );

@@ -371,211 +371,291 @@ class _SkyScreenState extends State<SkyScreen> {
     );
   }
 
+  /// Dar ekran esigi.
+  ///
+  /// 600 mantiksal piksel: telefonlarin dikey genisligi bunun altinda,
+  /// tabletler ve masaustu ustunde kalir. Tek esik yeterli — ara
+  /// kirilimlar eklemek, kazandirdigindan cok bakim maliyeti getirir.
+  static const _narrowWidth = 600.0;
+
   Widget _overlay(SkyModel sky) => SafeArea(
+    child: LayoutBuilder(
+      builder: (context, c) {
+        final narrow = c.maxWidth < _narrowWidth;
+        return Padding(
+          padding: EdgeInsets.all(narrow ? 8 : 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _topControls(narrow),
+              const SizedBox(height: 8),
+              if (!narrow) _infoBox(sky),
+              const Spacer(),
+              // Alt panel ekranin tamamini kaplamamali: gokyuzu gorunur
+              // kalmali, yoksa arac harita olmaktan cikip forma donusur.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: c.maxHeight * (narrow ? 0.58 : 0.66),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _timeSlider(narrow),
+                      const SizedBox(height: 6),
+                      _tabBar(narrow),
+                      if (_tab == _Tab.plan || _tab == _Tab.report) ...[
+                        const SizedBox(height: 6),
+                        _selectorRow(narrow),
+                      ],
+                      const SizedBox(height: 8),
+                      _activePanel(),
+                      const SizedBox(height: 8),
+                      _timeStepper(narrow),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+
+  /// Hazir bakislar ve gosterim anahtarlari.
+  Widget _topControls(bool narrow) => Wrap(
+    spacing: narrow ? 6 : 8,
+    runSpacing: 6,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      for (final p in presets)
+        FilledButton.tonal(
+          style: narrow ? _denseButton : null,
+          onPressed: () => _applyPreset(p),
+          child: Text(p.label),
+        ),
+      FilterChip(
+        label: Text(narrow ? 'Cizgiler' : 'Takim yildizi cizgileri'),
+        selected: _showConstellations,
+        visualDensity: narrow ? VisualDensity.compact : null,
+        onSelected: (v) => setState(() => _showConstellations = v),
+      ),
+      FilterChip(
+        label: Text(narrow ? 'Adlar' : 'Yildiz adlari'),
+        selected: _showLabels,
+        visualDensity: narrow ? VisualDensity.compact : null,
+        onSelected: (v) => setState(() => _showLabels = v),
+      ),
+    ],
+  );
+
+  static final _denseButton = FilledButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    minimumSize: Size.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    textStyle: const TextStyle(fontSize: 12),
+  );
+
+  /// Sekmeler. Dar ekranda etiket yerine simge — bes metin etiketi
+  /// telefon genisligine sigmiyor ve tasma hatasi veriyor.
+  Widget _tabBar(bool narrow) => SizedBox(
+    width: double.infinity,
+    child: SegmentedButton<_Tab>(
+      segments: [
+        ButtonSegment(
+          value: _Tab.camera,
+          icon: const Icon(Icons.photo_camera_outlined, size: 18),
+          label: narrow ? null : const Text('Kamera'),
+        ),
+        ButtonSegment(
+          value: _Tab.plan,
+          icon: const Icon(Icons.nightlight_outlined, size: 18),
+          label: narrow ? null : const Text('Plan'),
+        ),
+        ButtonSegment(
+          value: _Tab.report,
+          icon: const Icon(Icons.assessment_outlined, size: 18),
+          label: narrow ? null : const Text('Rapor'),
+        ),
+        ButtonSegment(
+          value: _Tab.horizon,
+          icon: const Icon(Icons.terrain, size: 18),
+          label: narrow ? null : const Text('Ufuk'),
+        ),
+        ButtonSegment(
+          value: _Tab.calibration,
+          icon: const Icon(Icons.tune, size: 18),
+          label: narrow ? null : const Text('Kalibrasyon'),
+        ),
+      ],
+      selected: {_tab},
+      showSelectedIcon: false,
+      style: narrow
+          ? const ButtonStyle(visualDensity: VisualDensity.compact)
+          : null,
+      onSelectionChanged: (v) => setState(() => _tab = v.first),
+    ),
+  );
+
+  /// Hedef ve konum seciciler. Dar ekranda alt alta.
+  Widget _selectorRow(bool narrow) => narrow
+      ? Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [_targetSelector(), _siteSelector()],
+        )
+      : Row(
+          children: [
+            Expanded(child: _targetSelector()),
+            const SizedBox(width: 12),
+            _siteSelector(),
+          ],
+        );
+
+  Widget _activePanel() {
+    if (_tab == _Tab.horizon) {
+      return HorizonPanel(
+        altitudes: _horizonAltitudes,
+        enabled: _horizonEnabled,
+        onChanged: (v) => setState(() {
+          _horizonAltitudes = v;
+          _recomputePlan();
+        }),
+        onEnabledChanged: (v) => setState(() {
+          _horizonEnabled = v;
+          _recomputePlan();
+        }),
+      );
+    }
+    if (_tab == _Tab.calibration) {
+      return CalibrationPanel(
+        loaded: _calibration,
+        onChanged: (c) => setState(() => _calibration = c),
+      );
+    }
+    if (_tab == _Tab.report) {
+      return ReportPanel(
+        settings: _settings,
+        targetName: _targetName,
+        altitudeDegrees: _targetAltitude,
+        declinationDegrees: _target.declinationDegrees,
+        vMagnitude: _targetMagnitude,
+        // Messier katalogunda B-V yok; yildiz kataloguna baglanmasi
+        // Faz 6'nin isi. Simdilik null, rapor bunu eksik sayiyor.
+        colorIndexBV: null,
+        calibration: _calibration?.calibration ?? CalibrationSet.empty,
+        onChanged: (s) => setState(() => _settings = s),
+      );
+    }
+    final plan = _plan;
+    if (_tab == _Tab.plan && plan != null) {
+      return NightPanel(
+        plan: plan,
+        targetName: _targetName,
+        currentUtc: _utc,
+        localOffset: _localOffset,
+      );
+    }
+    return CameraPanel(
+      settings: _settings.copyWith(
+        targetDeclinationDegrees: _centerDeclination,
+      ),
+      onChanged: (s) => setState(() => _settings = s),
+      showFrame: _showFrame,
+      onShowFrameChanged: (v) => setState(() => _showFrame = v),
+    );
+  }
+
+  /// Durum kutusu. Dar ekranda gizli — dikey alan gokyuzune ayriliyor.
+  Widget _infoBox(SkyModel sky) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xCC0B1018),
+      borderRadius: BorderRadius.circular(8),
+    ),
     child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final p in presets)
-                FilledButton.tonal(
-                  onPressed: () => _applyPreset(p),
-                  child: Text(p.label),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              FilterChip(
-                label: const Text('Takim yildizi cizgileri'),
-                selected: _showConstellations,
-                onSelected: (v) => setState(() => _showConstellations = v),
-              ),
-              FilterChip(
-                label: const Text('Yildiz adlari'),
-                selected: _showLabels,
-                onSelected: (v) => setState(() => _showLabels = v),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: const Color(0xCC0B1018),
-              borderRadius: BorderRadius.circular(8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 12,
+          height: 1.5,
+          color: Color(0xFFBFD4E6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${_utc.toIso8601String()}Z'),
+            Text(
+              'bakis  Az ${formatDms(_azimuth, decimals: 0)}  '
+              'Alt ${formatDms(_altitude, decimals: 0)}',
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: DefaultTextStyle(
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  height: 1.5,
-                  color: Color(0xFFBFD4E6),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('${_utc.toIso8601String()}Z'),
-                    Text(
-                      'bakis  Az ${formatDms(_azimuth, decimals: 0)}  '
-                      'Alt ${formatDms(_altitude, decimals: 0)}',
-                    ),
-                    Text(
-                      'FOV    ${_fov.toStringAsFixed(1)}°  '
-                      '(~${_equivalentFocalLength(_fov).toStringAsFixed(0)} mm tam kare)',
-                    ),
-                    Text('yildiz ${sky.starCount}'),
-                    const Text(
-                      'surukle: bakis   kaydir/kistir: zoom',
-                      style: TextStyle(color: Color(0xFF6B8299)),
-                    ),
-                    const Text(
-                      'Orion: kum saati figuru, ortada uc yildizli kusak',
-                      style: TextStyle(color: Color(0xFF6B8299)),
-                    ),
-                  ],
-                ),
-              ),
+            Text(
+              'FOV    ${_fov.toStringAsFixed(1)}°  '
+              '(~${_equivalentFocalLength(_fov).toStringAsFixed(0)} mm tam kare)',
             ),
-          ),
-          const Spacer(),
-          _timeSlider(),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              SegmentedButton<_Tab>(
-                segments: const [
-                  ButtonSegment(value: _Tab.camera, label: Text('Kamera')),
-                  ButtonSegment(value: _Tab.plan, label: Text('Plan')),
-                  ButtonSegment(value: _Tab.report, label: Text('Rapor')),
-                  ButtonSegment(value: _Tab.horizon, label: Text('Ufuk')),
-                  ButtonSegment(
-                    value: _Tab.calibration,
-                    label: Text('Kalibrasyon'),
-                  ),
-                ],
-                selected: {_tab},
-                showSelectedIcon: false,
-                onSelectionChanged: (v) => setState(() => _tab = v.first),
-              ),
-              if (_tab == _Tab.plan || _tab == _Tab.report) ...[
-                const SizedBox(width: 12),
-                Expanded(child: _targetSelector()),
-                const SizedBox(width: 12),
-                _siteSelector(),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (_tab == _Tab.horizon)
-            HorizonPanel(
-              altitudes: _horizonAltitudes,
-              enabled: _horizonEnabled,
-              onChanged: (v) => setState(() {
-                _horizonAltitudes = v;
-                _recomputePlan();
-              }),
-              onEnabledChanged: (v) => setState(() {
-                _horizonEnabled = v;
-                _recomputePlan();
-              }),
-            )
-          else if (_tab == _Tab.calibration)
-            CalibrationPanel(
-              loaded: _calibration,
-              onChanged: (c) => setState(() => _calibration = c),
-            )
-          else if (_tab == _Tab.report)
-            ReportPanel(
-              settings: _settings,
-              targetName: _targetName,
-              altitudeDegrees: _targetAltitude,
-              declinationDegrees: _target.declinationDegrees,
-              vMagnitude: _targetMagnitude,
-              // Messier katalogunda B-V yok; yildiz kataloguna baglanmasi
-              // Faz 6'nin isi. Simdilik null, rapor bunu eksik sayiyor.
-              colorIndexBV: null,
-              calibration: _calibration?.calibration ?? CalibrationSet.empty,
-              onChanged: (s) => setState(() => _settings = s),
-            )
-          else if (_tab == _Tab.plan && _plan != null)
-            NightPanel(
-              plan: _plan!,
-              targetName: _targetName,
-              currentUtc: _utc,
-              localOffset: _localOffset,
-            )
-          else
-            CameraPanel(
-              settings: _settings.copyWith(
-                targetDeclinationDegrees: _centerDeclination,
-              ),
-              onChanged: (s) => setState(() => _settings = s),
-              showFrame: _showFrame,
-              onShowFrameChanged: (v) => setState(() => _showFrame = v),
+            Text('yildiz ${sky.starCount}'),
+            const Text(
+              'surukle: bakis   kaydir/kistir: zoom',
+              style: TextStyle(color: Color(0xFF6B8299)),
             ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              IconButton.filledTonal(
-                onPressed: () =>
-                    _setTime(_utc.subtract(const Duration(days: 1))),
-                icon: const Icon(Icons.keyboard_double_arrow_left),
-                tooltip: '-1 gun',
-              ),
-              const SizedBox(width: 6),
-              IconButton.filledTonal(
-                onPressed: () =>
-                    _setTime(_utc.subtract(const Duration(hours: 1))),
-                icon: const Icon(Icons.chevron_left),
-                tooltip: '-1 saat',
-              ),
-              const SizedBox(width: 4),
-              // Tarihe basinca takvim acilir. Ay evresinin plani nasil
-              // degistirdigini gormek icin hafta atlamak gerekiyor; bunu
-              // +1 gun dugmesine on kez basarak yapmak test edilebilir
-              // bir davranis degil.
-              TextButton(
-                onPressed: _pickDate,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  '${_utc.year}-${_utc.month.toString().padLeft(2, '0')}-'
-                  '${_utc.day.toString().padLeft(2, '0')}',
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                    color: Color(0xFFDDE8F2),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              IconButton.filledTonal(
-                onPressed: () => _setTime(_utc.add(const Duration(hours: 1))),
-                icon: const Icon(Icons.chevron_right),
-                tooltip: '+1 saat',
-              ),
-              const SizedBox(width: 6),
-              IconButton.filledTonal(
-                onPressed: () => _setTime(_utc.add(const Duration(days: 1))),
-                icon: const Icon(Icons.keyboard_double_arrow_right),
-                tooltip: '+1 gun',
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     ),
+  );
+
+  /// Tarih adimlayici. Dar ekranda tarih metni kisaliyor.
+  Widget _timeStepper(bool narrow) => Wrap(
+    spacing: narrow ? 2 : 6,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      IconButton.filledTonal(
+        onPressed: () => _setTime(_utc.subtract(const Duration(days: 1))),
+        icon: const Icon(Icons.keyboard_double_arrow_left),
+        visualDensity: narrow ? VisualDensity.compact : null,
+        tooltip: '-1 gun',
+      ),
+      IconButton.filledTonal(
+        onPressed: () => _setTime(_utc.subtract(const Duration(hours: 1))),
+        icon: const Icon(Icons.chevron_left),
+        visualDensity: narrow ? VisualDensity.compact : null,
+        tooltip: '-1 saat',
+      ),
+      TextButton(
+        onPressed: _pickDate,
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.symmetric(horizontal: narrow ? 4 : 8),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(
+          narrow
+              ? '${_utc.month.toString().padLeft(2, '0')}-'
+                    '${_utc.day.toString().padLeft(2, '0')}'
+              : '${_utc.year}-${_utc.month.toString().padLeft(2, '0')}-'
+                    '${_utc.day.toString().padLeft(2, '0')}',
+          style: const TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 12,
+            color: Color(0xFFDDE8F2),
+          ),
+        ),
+      ),
+      IconButton.filledTonal(
+        onPressed: () => _setTime(_utc.add(const Duration(hours: 1))),
+        icon: const Icon(Icons.chevron_right),
+        visualDensity: narrow ? VisualDensity.compact : null,
+        tooltip: '+1 saat',
+      ),
+      IconButton.filledTonal(
+        onPressed: () => _setTime(_utc.add(const Duration(days: 1))),
+        icon: const Icon(Icons.keyboard_double_arrow_right),
+        visualDensity: narrow ? VisualDensity.compact : null,
+        tooltip: '+1 gun',
+      ),
+    ],
   );
 
   /// T4.1 — dakika hassasiyetinde zaman kaydiricisi.
@@ -583,16 +663,17 @@ class _SkyScreenState extends State<SkyScreen> {
   /// Gunun ortasina gore -12 / +12 saat. Kaydirdikca yildizlar donuyor;
   /// gokyuzunun gercekten hareket ettigini gormek, aracin dogru
   /// calistigina dair en hizli sezgisel kontrol.
-  Widget _timeSlider() {
+  Widget _timeSlider(bool narrow) {
     final dayStart = DateTime.utc(_utc.year, _utc.month, _utc.day);
     final minutes = _utc.difference(dayStart).inMinutes.toDouble();
     return Row(
       children: [
         SizedBox(
-          width: 116,
+          width: narrow ? 62 : 116,
           child: Text(
             '${_utc.add(_localOffset).hour.toString().padLeft(2, '0')}:'
-            '${_utc.add(_localOffset).minute.toString().padLeft(2, '0')} yerel',
+            '${_utc.add(_localOffset).minute.toString().padLeft(2, '0')}'
+            '${narrow ? '' : ' yerel'}',
             style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
           ),
         ),

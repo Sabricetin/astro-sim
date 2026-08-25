@@ -78,9 +78,13 @@ Terminal'de **Ctrl+C**. Sunucu kapanır.
 Sahada dizüstü yanında olmayacaksa bu yol yetmez — aşağıdaki "gerçek
 kurulum" bölümüne bak.
 
-**Arayüz bilgisayar için tasarlandı.** Alt paneldeki beş sekme telefon
-ekranında sıkışık görünecek. Yatay çevirirsen daha rahat. İleride
-telefona uygun düzen yapılacak; şimdilik çalışır ama zarif değil.
+**Arayüz artık telefona uyumlu.** 600 piksel altındaki ekranlarda
+düzen kendini ayarlıyor: sekmeler simgeye dönüyor, üstteki durum kutusu
+gizleniyor (dikey alan gökyüzüne kalsın diye), hedef ve konum seçiciler
+alt alta geçiyor, alt panel kaydırılabiliyor.
+
+Beş ekran genişliğinde (320 / 390 / 430 / 740 / 1024) otomatik taşma
+testi var; her değişiklikte çalışıyor.
 
 **İlk açılış yavaş.** 30 MB indiriyor. Sonrasında tarayıcı önbelleğe
 alır, hızlanır.
