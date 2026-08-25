@@ -11,6 +11,56 @@ import 'package:flutter/services.dart' show rootBundle;
 /// Kullanici bakisi surukledginde gokyuzu donmez, sadece hangi parcasina
 /// baktigi degisir. O yuzden burada alt/az sabitlenir, her karede yalnizca
 /// projeksiyon calisir.
+/// Samanyolu seridini cizmek icin hazirlanmis egriler.
+///
+/// Galaktik enlem b = 0, +-10 ve +-20 derece cizgileri. Panorama
+/// GORUNTUSU degil, saf geometri — lisans sorunu yok ve kalibrasyon
+/// beklemiyor. Serit nerede geciyor sorusunu cevaplamak icin bu
+/// yeterli; parlaklik dokusu Faz 6'nin geri kalani.
+///
+/// Presesyon uygulaniyor: galaktik tanim J2000, gokyuzu ise tarihin
+/// gercek ekinoksunda ciziliyor. Yildizlarla ayni islemden gecmezse
+/// serit yildizlara gore kayar.
+class MilkyWayBands {
+  /// Her serit icin alt/az cifti dizisi. Uzunluk = 2 * nokta sayisi.
+  final List<Float32List> bands;
+
+  /// Her seridin galaktik enlemi, derece.
+  static const latitudes = <double>[0.0, 10.0, -10.0, 20.0, -20.0];
+
+  const MilkyWayBands(this.bands);
+
+  /// Verilen an ve gozlemci icin seritleri hesaplar.
+  factory MilkyWayBands.compute({
+    required DateTime utc,
+    required Observer observer,
+    double stepDegrees = 3.0,
+  }) {
+    final jd = julianDay(utc);
+    final lst = localMeanSiderealTimeDegrees(jd, observer.longitudeEastDegrees);
+    final out = <Float32List>[];
+    for (final b in latitudes) {
+      final n = (360 / stepDegrees).ceil();
+      final buf = Float32List(n * 2);
+      for (var i = 0; i < n; i++) {
+        final eq = galacticToEquatorial(
+          Galactic(longitudeDegrees: i * stepDegrees, latitudeDegrees: b),
+        );
+        final precessed = precessFromJ2000(j2000Position: eq, toJd: jd);
+        final h = equatorialToHorizontal(
+          equatorial: precessed,
+          observer: observer,
+          localSiderealTimeDegrees: lst,
+        );
+        buf[i * 2] = h.azimuthDegrees;
+        buf[i * 2 + 1] = h.altitudeDegrees;
+      }
+      out.add(buf);
+    }
+    return MilkyWayBands(out);
+  }
+}
+
 class SkyModel {
   final StarCatalog catalog;
 

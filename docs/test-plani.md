@@ -424,6 +424,28 @@ geri geliyor.
 **Yap:** Haritada parmakla sürükle, iki parmakla kıstır ve döndür.
 **Bekle:** Bakış kayıyor, zoom ve döndürme çalışıyor.
 
+## I. Samanyolu şeridi (Faz 6.2)
+
+### I1 — Şerit görünüyor
+**Yap:** Üstteki **Samanyolu** anahtarını aç/kapat.
+**Bekle:** Mavimsi eğri çizgiler beliriyor/kayboluyor. Ortadaki en
+belirgin (galaktik düzlem), dışa doğru soluyor.
+
+### I2 — Şerit galaktik merkezden geçiyor
+**Yap:** Hedef **Galaktik merkez**, 15 Temmuz, gece yarısı. Haritada
+güneye bak.
+**Bekle:** En parlak (ortadaki) çizgi galaktik merkezin bulunduğu
+noktadan geçiyor. Geçmiyorsa koordinat dönüşümü bozuk.
+
+### I3 — Yaz gecesi şerit yüksekte, kış gecesi alçakta
+**Yap:** Tarihi 15 Temmuz → 15 Ocak yap, aynı saatte bak.
+**Bekle:** Temmuz'da şerit gökyüzünü boydan boya kesiyor; Ocak'ta
+büyük kısmı ufkun altında.
+
+### I4 — Şerit yıldızların arkasında
+**Bekle:** Çizgiler yıldızların üstünü örtmüyor. Samanyolu difüz bir
+yüzey; nokta kaynaklar önünde olmalı.
+
 ## Notlar
 
 - Tüm saatler ekranda **yerel** (UTC+3), hesapta UTC. Yol haritası kuralı:

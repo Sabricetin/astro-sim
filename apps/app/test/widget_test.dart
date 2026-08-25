@@ -770,4 +770,84 @@ void main() {
       }
     });
   });
+
+  group('Samanyolu seritleri — T6.2', () {
+    final mersin = Observer(
+      latitudeDegrees: 36.80,
+      longitudeEastDegrees: 34.62,
+      elevationMeters: 10,
+    );
+    final utc = DateTime.utc(2026, 7, 15, 22);
+
+    test('bes serit, hepsi dolu', () {
+      final mw = MilkyWayBands.compute(utc: utc, observer: mersin);
+      expect(mw.bands.length, MilkyWayBands.latitudes.length);
+      for (final b in mw.bands) {
+        expect(b.length, greaterThan(100));
+        expect(b.length.isEven, isTrue, reason: 'alt/az cifti olmali');
+      }
+    });
+
+    test('butun noktalar gecerli alt/az', () {
+      final mw = MilkyWayBands.compute(utc: utc, observer: mersin);
+      for (final band in mw.bands) {
+        for (var i = 0; i < band.length ~/ 2; i++) {
+          expect(band[i * 2], inInclusiveRange(0, 360));
+          expect(band[i * 2 + 1], inInclusiveRange(-90, 90));
+        }
+      }
+    });
+
+    test('galaktik merkez b=0 seridinin uzerinde', () {
+      // Serit dogru yerdeyse, galaktik merkezin o andaki alt/az
+      // konumu b=0 seridindeki bir noktaya cok yakin olmali.
+      final gc = precessFromJ2000(
+        j2000Position: galacticCenterEquatorial,
+        toJd: julianDay(utc),
+      );
+      final gcHz = equatorialToHorizontal(
+        equatorial: gc,
+        observer: mersin,
+        localSiderealTimeDegrees: localMeanSiderealTimeDegrees(
+          julianDay(utc),
+          mersin.longitudeEastDegrees,
+        ),
+      );
+      final plane = MilkyWayBands.compute(
+        utc: utc,
+        observer: mersin,
+        stepDegrees: 1.0,
+      ).bands[0];
+
+      var nearest = 999.0;
+      for (var i = 0; i < plane.length ~/ 2; i++) {
+        final d = angularSeparationDegrees(
+          gcHz.azimuthDegrees,
+          gcHz.altitudeDegrees,
+          plane[i * 2],
+          plane[i * 2 + 1],
+        );
+        if (d < nearest) nearest = d;
+      }
+      // 1 derecelik adimda en yakin nokta yarim dereceden yakin olmali.
+      expect(nearest, lessThan(0.6), reason: 'en yakin nokta $nearest derece');
+    });
+
+    test('presesyon uygulaniyor — 2000 ile 2100 arasi serit kayiyor', () {
+      // Yildizlara presesyon uygulanip serite uygulanmasaydi, serit
+      // yildizlara gore kayardi. Uzak iki epokta ayni gokyuzu saatinde
+      // seridin ekvatoral konumu farkli olmali.
+      double firstAlt(DateTime t) =>
+          MilkyWayBands.compute(utc: t, observer: mersin).bands[0][1];
+      final a = firstAlt(DateTime.utc(2000, 7, 15, 22));
+      final b = firstAlt(DateTime.utc(2100, 7, 15, 22));
+      expect((a - b).abs(), greaterThan(0.1));
+    });
+
+    test('serit sirasi enlem listesiyle ayni', () {
+      expect(MilkyWayBands.latitudes.first, 0.0);
+      expect(MilkyWayBands.latitudes, contains(20.0));
+      expect(MilkyWayBands.latitudes, contains(-20.0));
+    });
+  });
 }

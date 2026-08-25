@@ -446,11 +446,32 @@ ZP/μ_sky/FWHM'i çıkarır.
 | Task | İş |
 |---|---|
 | 6.1 | Tüm-gökyüzü panorama: **ESO veya NASA kaynaklı** (lisans bölümüne bak). CC BY-NC panoramalar ticari planla uyumsuz — cezbedici görünseler de alma |
-| 6.2 | Galaktik ↔ ekvatoral koordinat dönüşümü |
+| 6.2 | Galaktik ↔ ekvatoral koordinat dönüşümü — ✅ **yapıldı (25 Ağustos 2026)** |
 | 6.3 | Küresel eşleme (equirectangular → gökyüzü küresi) |
 | 6.4 | Parlaklık kalibrasyonu: piksel değeri → mag/arcsec² |
 | 6.5 | Fon + Samanyolu + yıldızları birleştir |
 | 6.6 | Hava parıltısı / ufuk gradyanı (şehir yönünde parlama) |
+
+### 6.2 yapıldı — panorama olmadan da değer var (25 Ağustos 2026)
+
+Galaktik koordinat dönüşümü ve **Samanyolu şeridinin haritaya çizilmesi**
+tamamlandı. Panorama görüntüsü kullanılmadı: şerit, galaktik enlem
+çizgileri olarak (b = 0, ±10, ±20) çiziliyor.
+
+**Bu bilinçli bir sıralama.** 6.1 (panorama) iki şey bekliyor: lisans
+kararı (CC BY-NC ticari planla uyumsuz) ve shader performans prototipi.
+Ama "Samanyolu nereden geçiyor" sorusunun cevabı ikisini de
+gerektirmiyor — kadraj kurmak için şeridin *yeri* yeterli, *dokusu*
+değil.
+
+Yan ürün: `equatorialToGalactic` artık Faz 0.B'nin fon alanı seçimini
+doğruluyor. Pegasus karesinin galaktik enlemi −31° — difüz fon ölçümü
+galaktik düzleme yakın yapılsaydı Samanyolu'nun kendisi ölçülürdü.
+Test bunu sabitledi.
+
+**Doğrulama:** Vega l=67.45 b=19.24, Deneb b=2.00, Sirius b=−8.89 —
+hepsi literatürle uyuşuyor. Galaktik merkezin türetilmiş konumu
+RA 266.40499 (literatür 266.40510, fark 0.4 yay saniyesi).
 
 **Neden ayrı faz:** Yıldız nokta kaynak, Samanyolu difüz yüzey parlaklığı. Tamamen farklı iki render yolu. Baştan karıştırırsan mimarin bozulur.
 

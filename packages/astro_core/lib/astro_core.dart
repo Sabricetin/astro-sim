@@ -18,6 +18,7 @@ export 'src/camera/sensor.dart';
 export 'src/catalog/constellations.dart';
 export 'src/catalog/messier.g.dart';
 export 'src/catalog/star_catalog.dart';
+export 'src/coords/galactic.dart';
 export 'src/coords/horizontal.dart';
 export 'src/ephemeris/moon.dart';
 export 'src/ephemeris/twilight.dart';

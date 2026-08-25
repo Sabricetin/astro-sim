@@ -78,6 +78,11 @@ class _SkyScreenState extends State<SkyScreen> {
 
   bool _showConstellations = true;
   bool _showLabels = true;
+  bool _showMilkyWay = true;
+
+  /// Samanyolu seritleri. Zamana ve konuma bagli, o yuzden gokyuzu
+  /// modeliyle birlikte yenileniyor.
+  MilkyWayBands? _milkyWay;
   bool _showFrame = true;
   double _roll = 0;
 
@@ -140,6 +145,7 @@ class _SkyScreenState extends State<SkyScreen> {
         utc: _utc,
         observer: site.observer,
       );
+      _milkyWay = MilkyWayBands.compute(utc: _utc, observer: site.observer);
       _recomputePlan();
     });
   }
@@ -201,6 +207,7 @@ class _SkyScreenState extends State<SkyScreen> {
           utc: _utc,
           observer: observer,
         );
+        _milkyWay = MilkyWayBands.compute(utc: _utc, observer: observer);
         _recomputePlan();
       });
     } catch (e) {
@@ -226,6 +233,7 @@ class _SkyScreenState extends State<SkyScreen> {
       _sky = sameDay
           ? sky.atTime(utc)
           : SkyModel.compute(catalog: catalog, utc: utc, observer: observer);
+      _milkyWay = MilkyWayBands.compute(utc: utc, observer: observer);
       if (recomputePlan) _recomputePlan();
     });
   }
@@ -351,6 +359,7 @@ class _SkyScreenState extends State<SkyScreen> {
                         scratch: scratch,
                         rollDegrees: _roll,
                         horizonProfile: _horizon,
+                        milkyWay: _showMilkyWay ? _milkyWay : null,
                         showConstellations: _showConstellations,
                         showLabels: _showLabels,
                         frame: _showFrame
@@ -447,6 +456,12 @@ class _SkyScreenState extends State<SkyScreen> {
         selected: _showLabels,
         visualDensity: narrow ? VisualDensity.compact : null,
         onSelected: (v) => setState(() => _showLabels = v),
+      ),
+      FilterChip(
+        label: const Text('Samanyolu'),
+        selected: _showMilkyWay,
+        visualDensity: narrow ? VisualDensity.compact : null,
+        onSelected: (v) => setState(() => _showMilkyWay = v),
       ),
     ],
   );

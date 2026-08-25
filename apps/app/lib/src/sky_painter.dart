@@ -29,6 +29,10 @@ class SkyPainter extends CustomPainter {
   /// Arazi profili. Verilirse ufuk cizgisinin uzerine engel silueti
   /// cizilir ve altindaki gokyuzu karartilir.
   final astro.Horizon? horizonProfile;
+
+  /// Samanyolu seritleri. Verilirse galaktik duzlem ve +-10, +-20
+  /// derece cizgileri cizilir.
+  final MilkyWayBands? milkyWay;
   final bool showConstellations;
   final bool showLabels;
 
@@ -48,6 +52,7 @@ class SkyPainter extends CustomPainter {
     this.rollDegrees = 0.0,
     this.showHorizon = true,
     this.horizonProfile,
+    this.milkyWay,
     this.showConstellations = true,
     this.showLabels = true,
     this.frame,
@@ -91,6 +96,10 @@ class SkyPainter extends CustomPainter {
       _paintHorizon(canvas, size, pixelsPerTangent, cx, cy);
       _paintCompass(canvas, size, pixelsPerTangent, cx, cy);
     }
+
+    // Samanyolu yildizlarin ALTINA ciziliyor: difuz bir yuzey, nokta
+    // kaynaklarin arkasinda kalmali.
+    _paintMilkyWay(canvas, pixelsPerTangent, cx, cy);
 
     if (showConstellations) {
       _paintConstellations(canvas, size, pixelsPerTangent, cx, cy);
@@ -437,6 +446,7 @@ class SkyPainter extends CustomPainter {
   @override
   bool shouldRepaint(SkyPainter old) =>
       old.horizonProfile != horizonProfile ||
+      old.milkyWay != milkyWay ||
       old.sky != sky ||
       old.centerAzimuthDegrees != centerAzimuthDegrees ||
       old.centerAltitudeDegrees != centerAltitudeDegrees ||
@@ -446,4 +456,58 @@ class SkyPainter extends CustomPainter {
       old.showConstellations != showConstellations ||
       old.showLabels != showLabels ||
       old.frame != frame;
+
+  /// Samanyolu seritleri.
+  ///
+  /// Panorama GORUNTUSU degil, galaktik enlem cizgileri. Serit nerede
+  /// geciyor sorusunu cevapliyor; parlaklik dokusu Faz 6'nin geri
+  /// kalani ve lisans karari bekliyor.
+  ///
+  /// b=0 en belirgin, disa dogru soluyor — gercek Samanyolu'nun
+  /// parlaklik dagilimini kabaca taklit ediyor.
+  void _paintMilkyWay(
+    Canvas canvas,
+    double pixelsPerTangent,
+    double cx,
+    double cy,
+  ) {
+    final mw = milkyWay;
+    if (mw == null) return;
+
+    for (var band = 0; band < mw.bands.length; band++) {
+      final data = mw.bands[band];
+      final latitude = MilkyWayBands.latitudes[band].abs();
+      // b=0 -> 0x66, b=20 -> 0x1E civari.
+      final alpha = (0x66 * (1.0 - latitude / 28.0)).round().clamp(0x14, 0x66);
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = latitude == 0 ? 2.4 : 1.2
+        ..color = Color(0xFF7FA8C8).withAlpha(alpha);
+
+      final path = Path();
+      var started = false;
+      for (var i = 0; i < data.length ~/ 2; i++) {
+        final p = astro.project(
+          azimuthDegrees: data[i * 2],
+          altitudeDegrees: data[i * 2 + 1],
+          centerAzimuthDegrees: centerAzimuthDegrees,
+          centerAltitudeDegrees: centerAltitudeDegrees,
+          rollDegrees: rollDegrees,
+        );
+        if (p == null) {
+          started = false;
+          continue;
+        }
+        final x = cx + p.x * pixelsPerTangent;
+        final y = cy - p.y * pixelsPerTangent;
+        if (!started) {
+          path.moveTo(x, y);
+          started = true;
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
 }
