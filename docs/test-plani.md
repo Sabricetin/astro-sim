@@ -446,6 +446,38 @@ büyük kısmı ufkun altında.
 **Bekle:** Çizgiler yıldızların üstünü örtmüyor. Samanyolu difüz bir
 yüzey; nokta kaynaklar önünde olmalı.
 
+## J. Durum kaydı (kalıcılık)
+
+### J1 — Ufuk profili kalıcı
+**Yap:** Ufuk sekmesinde birkaç yön ayarla, anahtarı aç. Uygulamayı
+**kapat ve yeniden aç**.
+**Bekle:** Değerler ve anahtar aynen duruyor.
+**Neden önemli:** Ufuk ölçümü sahada 15 dakika sürüyor; kaybolması
+kabul edilemez.
+
+### J2 — Kalibrasyon kalıcı
+**Yap:** Kalibrasyon sekmesine F4'teki örnek defteri yapıştır, yükle.
+Uygulamayı kapat, aç.
+**Bekle:** Defter yüklü, Rapor sekmesinde çubuk hâlâ 5/6.
+
+### J3 — Kamera ayarları ve görünüm anahtarları kalıcı
+**Yap:** Gövde/odak/diyafram/ISO değiştir, Samanyolu'nu kapat.
+Kapat, aç.
+**Bekle:** Hepsi aynen.
+
+### J4 — Konum kalıcı
+**Yap:** Konumu Erzurum yap, kapat, aç.
+**Bekle:** Erzurum seçili ve plan ona göre.
+
+### J5 — Zaman kalıcı DEĞİL (kasıtlı)
+**Yap:** Tarihi 3 ay ileri al, kapat, aç.
+**Bekle:** Tarih **bugüne dönmüş.** Bir hafta önceki gökyüzünü
+göstermek yanıltıcı olurdu.
+
+### J6 — Temizleyince geri dönüyor
+**Yap:** Kalibrasyon sekmesinde **Temizle**, kapat, aç.
+**Bekle:** Defter yok, Rapor çubuğu 0/6.
+
 ## Notlar
 
 - Tüm saatler ekranda **yerel** (UTC+3), hesapta UTC. Yol haritası kuralı:

@@ -39,6 +39,14 @@ class LoadedCalibration {
   /// oldugunu anlamanin tek yolu.
   final List<String> unknownFields;
 
+  /// Okundugu ham metin.
+  ///
+  /// Saklaniyor cunku uygulama durumu diske yazarken cozumlenmis
+  /// nesneyi degil BU METNI kaydediyor: boylece her acilista ayni
+  /// dogrulamadan geciyor ve kaynaksiz bir defter diske yazilmis olsa
+  /// bile okunurken reddediliyor.
+  final String rawJson;
+
   const LoadedCalibration({
     required this.calibration,
     required this.source,
@@ -48,6 +56,7 @@ class LoadedCalibration {
     this.pixelPitchMicrometers,
     this.identifiedStarHr,
     this.unknownFields = const [],
+    this.rawJson = '',
   });
 }
 
@@ -162,5 +171,6 @@ LoadedCalibration parseCalibrationJson(String text) {
     identifiedStarHr: (j['identified_star_hr'] as num?)?.toInt(),
     unknownFields: j.keys.where((k) => !_knownFields.contains(k)).toList()
       ..sort(),
+    rawJson: text,
   );
 }

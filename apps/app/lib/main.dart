@@ -4,7 +4,9 @@ import 'dart:typed_data';
 import 'package:astro_core/astro_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/app_state.dart';
 import 'src/calibration_panel.dart';
 import 'src/camera_panel.dart';
 import 'src/horizon_panel.dart';
@@ -138,7 +140,7 @@ class _SkyScreenState extends State<SkyScreen> {
   void _selectSite(Site site) {
     final catalog = _catalog;
     if (catalog == null) return;
-    setState(() {
+    _persist(() {
       _site = site;
       _sky = SkyModel.compute(
         catalog: catalog,
@@ -177,6 +179,48 @@ class _SkyScreenState extends State<SkyScreen> {
     ).declinationDegrees;
   }
 
+  /// Su anki durumu diske yazilacak bicimde toplar.
+  AppState get _state => AppState(
+    siteName: _site.name,
+    horizonAltitudes: _horizonAltitudes,
+    horizonEnabled: _horizonEnabled,
+    calibrationJson: _calibration?.rawJson,
+    cameraName: _settings.camera.name,
+    focalLengthMm: _settings.focalLengthMm,
+    aperture: _settings.aperture,
+    exposureSeconds: _settings.exposureSeconds,
+    portrait: _settings.portrait,
+    iso: _settings.iso,
+    showConstellations: _showConstellations,
+    showLabels: _showLabels,
+    showMilkyWay: _showMilkyWay,
+    showFrame: _showFrame,
+  );
+
+  SharedPreferences? _prefs;
+
+  /// Kalici bir ayari degistirir: setState + kaydet.
+  ///
+  /// Ayri ayri _save() cagirmak yerine tek kapi: yeni bir ayar
+  /// eklendiginde kaydetmeyi unutmak mumkun olmasin diye.
+  void _persist(VoidCallback change) {
+    setState(change);
+    _save();
+  }
+
+  /// Durumu diske yazar.
+  ///
+  /// Hata yutuluyor: tercih kaydedememek uygulamayi durdurmayi hak
+  /// eden bir sorun degil. Kaydedilemezse kullanici bir dahaki acilista
+  /// varsayilanlari gorur, o kadar.
+  void _save() {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    prefs.setString(AppState.storageKey, _state.encode()).catchError((_) {
+      return false;
+    });
+  }
+
   /// Hedefin su anki yuksekligi. Rapor hava kutlesini bundan hesapliyor.
   double get _targetAltitude => equatorialToHorizontal(
     equatorial: _target,
@@ -198,6 +242,27 @@ class _SkyScreenState extends State<SkyScreen> {
 
   Future<void> _load() async {
     try {
+      // Tercihler once: gokyuzu modeli SECILI KONUMLA kurulmali,
+      // yoksa acilista bir kez yanlis konumla hesaplanip hemen
+      // yeniden hesaplanirdi.
+      try {
+        _prefs = await SharedPreferences.getInstance();
+        final saved = AppState.decode(_prefs?.getString(AppState.storageKey));
+        if (saved != null) {
+          _site = saved.site;
+          _horizonAltitudes = saved.horizonAltitudes;
+          _horizonEnabled = saved.horizonEnabled;
+          _calibration = saved.calibration;
+          _settings = saved.cameraSettings;
+          _showConstellations = saved.showConstellations;
+          _showLabels = saved.showLabels;
+          _showMilkyWay = saved.showMilkyWay;
+          _showFrame = saved.showFrame;
+        }
+      } catch (_) {
+        // Tercihler okunamadi — varsayilanlarla devam.
+      }
+
       final catalog = await SkyModel.loadCatalog();
       setState(() {
         _catalog = catalog;
@@ -449,19 +514,19 @@ class _SkyScreenState extends State<SkyScreen> {
         label: Text(narrow ? 'Cizgiler' : 'Takim yildizi cizgileri'),
         selected: _showConstellations,
         visualDensity: narrow ? VisualDensity.compact : null,
-        onSelected: (v) => setState(() => _showConstellations = v),
+        onSelected: (v) => _persist(() => _showConstellations = v),
       ),
       FilterChip(
         label: Text(narrow ? 'Adlar' : 'Yildiz adlari'),
         selected: _showLabels,
         visualDensity: narrow ? VisualDensity.compact : null,
-        onSelected: (v) => setState(() => _showLabels = v),
+        onSelected: (v) => _persist(() => _showLabels = v),
       ),
       FilterChip(
         label: const Text('Samanyolu'),
         selected: _showMilkyWay,
         visualDensity: narrow ? VisualDensity.compact : null,
-        onSelected: (v) => setState(() => _showMilkyWay = v),
+        onSelected: (v) => _persist(() => _showMilkyWay = v),
       ),
     ],
   );
@@ -533,11 +598,11 @@ class _SkyScreenState extends State<SkyScreen> {
       return HorizonPanel(
         altitudes: _horizonAltitudes,
         enabled: _horizonEnabled,
-        onChanged: (v) => setState(() {
+        onChanged: (v) => _persist(() {
           _horizonAltitudes = v;
           _recomputePlan();
         }),
-        onEnabledChanged: (v) => setState(() {
+        onEnabledChanged: (v) => _persist(() {
           _horizonEnabled = v;
           _recomputePlan();
         }),
@@ -546,7 +611,7 @@ class _SkyScreenState extends State<SkyScreen> {
     if (_tab == _Tab.calibration) {
       return CalibrationPanel(
         loaded: _calibration,
-        onChanged: (c) => setState(() => _calibration = c),
+        onChanged: (c) => _persist(() => _calibration = c),
       );
     }
     if (_tab == _Tab.report) {
@@ -560,7 +625,7 @@ class _SkyScreenState extends State<SkyScreen> {
         // Faz 6'nin isi. Simdilik null, rapor bunu eksik sayiyor.
         colorIndexBV: null,
         calibration: _calibration?.calibration ?? CalibrationSet.empty,
-        onChanged: (s) => setState(() => _settings = s),
+        onChanged: (s) => _persist(() => _settings = s),
       );
     }
     final plan = _plan;
@@ -576,9 +641,9 @@ class _SkyScreenState extends State<SkyScreen> {
       settings: _settings.copyWith(
         targetDeclinationDegrees: _centerDeclination,
       ),
-      onChanged: (s) => setState(() => _settings = s),
+      onChanged: (s) => _persist(() => _settings = s),
       showFrame: _showFrame,
-      onShowFrameChanged: (v) => setState(() => _showFrame = v),
+      onShowFrameChanged: (v) => _persist(() => _showFrame = v),
     );
   }
 

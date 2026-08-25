@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:astro_core/astro_core.dart';
 import 'package:astro_sim/src/report_panel.dart';
 import 'package:astro_sim/src/site.dart';
 import 'package:astro_sim/src/sky_model.dart';
+import 'package:astro_sim/src/app_state.dart';
 import 'package:astro_sim/src/calibration_panel.dart';
 import 'package:astro_sim/src/horizon_panel.dart';
 import 'package:astro_sim/src/camera_panel.dart';
@@ -848,6 +850,145 @@ void main() {
       expect(MilkyWayBands.latitudes.first, 0.0);
       expect(MilkyWayBands.latitudes, contains(20.0));
       expect(MilkyWayBands.latitudes, contains(-20.0));
+    });
+  });
+
+  group('Durum kaydi — kalicilik', () {
+    const goodCalibration = '''
+{"format":"astro-sim-kalibrasyon","version":1,
+ "source":"Faz 0.B, faz0b, ISO 1600",
+ "extinction_coefficient_k":0.312,"psf_fwhm_px":2.15}
+''';
+
+    AppState sample({String? calibration = goodCalibration}) => AppState(
+      siteName: 'Gaziantep',
+      horizonAltitudes: const [1, 2, 3, 4, 5, 6, 7, 8],
+      horizonEnabled: true,
+      calibrationJson: calibration,
+      cameraName: 'Canon EOS 760D',
+      focalLengthMm: 18,
+      aperture: 3.5,
+      exposureSeconds: 25,
+      portrait: true,
+      iso: 3200,
+      showConstellations: false,
+      showLabels: true,
+      showMilkyWay: false,
+      showFrame: true,
+    );
+
+    test('gidis-donus kayipsiz', () {
+      final back = AppState.decode(sample().encode())!;
+      expect(back.siteName, 'Gaziantep');
+      expect(back.horizonAltitudes, [1, 2, 3, 4, 5, 6, 7, 8]);
+      expect(back.horizonEnabled, isTrue);
+      expect(back.focalLengthMm, 18);
+      expect(back.aperture, 3.5);
+      expect(back.exposureSeconds, 25);
+      expect(back.portrait, isTrue);
+      expect(back.iso, 3200);
+      expect(back.showConstellations, isFalse);
+      expect(back.showMilkyWay, isFalse);
+    });
+
+    test('kalibrasyon HAM METIN olarak saklaniyor', () {
+      final back = AppState.decode(sample().encode())!;
+      // Cozumlenmis nesne degil metin: her acilista ayni dogrulamadan
+      // gecsin diye.
+      expect(back.calibrationJson, goodCalibration);
+      expect(back.calibration, isNotNull);
+      expect(
+        back.calibration!.calibration.extinctionCoefficient!.value,
+        closeTo(0.312, 1e-9),
+      );
+    });
+
+    test('KAYNAKSIZ kalibrasyon diskten okunurken de reddediliyor', () {
+      // Kural veri sinirinda uygulaniyor; diske yazilmis olmasi
+      // gecerlilik kazandirmiyor.
+      final state = sample(calibration: '{"extinction_coefficient_k":0.3}');
+      final back = AppState.decode(state.encode())!;
+      expect(back.calibrationJson, isNotNull);
+      expect(back.calibration, isNull, reason: 'kaynaksiz defter yuklenmemeli');
+    });
+
+    test('kalibrasyon yoksa null kaliyor', () {
+      final back = AppState.decode(sample(calibration: null).encode())!;
+      expect(back.calibrationJson, isNull);
+      expect(back.calibration, isNull);
+    });
+
+    group('Bozuk veri varsayilana dusuyor, cokmuyor', () {
+      test('bos metin', () => expect(AppState.decode(''), isNull));
+      test('null', () => expect(AppState.decode(null), isNull));
+      test('bozuk JSON', () => expect(AppState.decode('{bozuk'), isNull));
+      test('dizi', () => expect(AppState.decode('[1,2,3]'), isNull));
+
+      test('ileri surum reddediliyor', () {
+        expect(AppState.decode('{"version":99,"site":"Mersin"}'), isNull);
+      });
+
+      test('yanlis uzunlukta ufuk dizisi varsayilana dusuyor', () {
+        final back = AppState.decode('{"site":"Mersin","horizon":[1,2]}')!;
+        expect(back.horizonAltitudes.length, 8);
+        expect(back.horizonAltitudes.every((v) => v == 0), isTrue);
+      });
+
+      test('eksik alanlar varsayilanla doluyor', () {
+        final back = AppState.decode('{"site":"Mersin"}')!;
+        expect(back.iso, 1600);
+        expect(back.focalLengthMm, 18);
+        expect(back.showMilkyWay, isTrue);
+        expect(back.horizonEnabled, isFalse);
+      });
+
+      test('yanlis tipteki alanlar varsayilana dusuyor', () {
+        final back = AppState.decode(
+          '{"site":"Mersin","iso":"cok","focal":true,"portrait":5}',
+        )!;
+        expect(back.iso, 1600);
+        expect(back.focalLengthMm, 18);
+        expect(back.portrait, isFalse);
+      });
+    });
+
+    group('Listeden kaldirilmis ad varsayilana dusuyor', () {
+      test('bilinmeyen konum', () {
+        final back = AppState.decode('{"site":"Atlantis"}')!;
+        expect(back.site.name, sites.first.name);
+      });
+
+      test('bilinmeyen govde', () {
+        final back = AppState.decode('{"camera":"Yok Boyle Makine"}')!;
+        expect(back.camera.name, cameras.first.name);
+      });
+
+      test('bilinen konum korunuyor', () {
+        final back = AppState.decode('{"site":"Erzurum"}')!;
+        expect(back.site.name, 'Erzurum');
+        expect(back.site.latitudeDegrees, closeTo(39.9043, 1e-6));
+      });
+    });
+
+    test('zaman KAYDEDILMIYOR', () {
+      // Uygulama acildiginda gecerli ana donmeli; bir hafta onceki
+      // gokyuzunu gostermek yaniltici olurdu.
+      final json = jsonDecode(sample().encode()) as Map<String, dynamic>;
+      for (final key in json.keys) {
+        expect(
+          key.toLowerCase(),
+          isNot(anyOf(contains('utc'), contains('time'), contains('date'))),
+          reason: '$key zamana benziyor',
+        );
+      }
+    });
+
+    test('kamera ayarlari geri kuruluyor', () {
+      final s = AppState.decode(sample().encode())!.cameraSettings;
+      expect(s.camera.name, 'Canon EOS 760D');
+      expect(s.iso, 3200);
+      expect(s.portrait, isTrue);
+      expect(s.exposureSeconds, 25);
     });
   });
 }

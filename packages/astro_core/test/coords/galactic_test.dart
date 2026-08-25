@@ -57,7 +57,7 @@ void main() {
     ];
 
     for (final (name, ra, dec, l, b) in cases) {
-      test('$name', () {
+      test(name, () {
         final g = gal(ra, dec);
         expect(g.longitudeDegrees, closeTo(l, 0.02), reason: '$name boylam');
         expect(g.latitudeDegrees, closeTo(b, 0.02), reason: '$name enlem');

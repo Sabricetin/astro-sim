@@ -405,6 +405,32 @@ bir dağ sırtı geniş bir azimut aralığını kaplar ve hedef pencere boyunca
 `docs/ufuk-olcumu.md`: telefonun eğim ölçeriyle 15 dakikada ölçme
 talimatı.
 
+## Durum kaydı ✅ (25 Ağustos 2026)
+
+Ufuk profili, kalibrasyon defteri, kamera ayarları, konum ve görünüm
+anahtarları artık kalıcı. Gerekçe basit: ufuk ölçümü sahada 15 dakika,
+kalibrasyon defteri bir gecelik çekimin ürünü.
+
+**Kalibrasyon HAM METİN olarak saklanıyor**, çözümlenmiş nesne olarak
+değil. Böylece her açılışta aynı doğrulamadan geçiyor — kaynaksız bir
+defter diske yazılmış olsa bile okunurken reddediliyor. Kural veri
+sınırında uygulanıyor; diske yazılmış olmak geçerlilik kazandırmıyor.
+
+**Zaman kaydedilmiyor.** Uygulama açılınca geçerli ana dönüyor; bir
+hafta önceki gökyüzünü göstermek yanıltıcı olurdu. Test bunu
+sabitledi: kaydedilen JSON'da zamana benzeyen hiçbir alan olmamalı.
+
+### Testin bulduğu dayanıklılık hatası
+
+`{"iso":"cok"}` gibi yanlış tipteki tek bir alan, `as num?` dönüşümünde
+istisna atıyor ve **bütün kaydı çöpe atıyordu** — tek bozuk alan
+yüzünden ufuk profili de kaybolurdu. Amaç "bozuk alan varsayılana
+düşer" idi, "bozuk alan her şeyi siler" değil. Tip dönüşümleri güvenli
+hale getirildi.
+
+Ayrıca listeden kaldırılmış bir gövde veya konum adı da varsayılana
+düşüyor: liste değişebilir ve eski kayıt onu işaret edebilir.
+
 ## Sıradaki
 
 | Faz | Durum | Engel |
