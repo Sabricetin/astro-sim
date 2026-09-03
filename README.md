@@ -129,7 +129,8 @@ python3 -m venv .venv
 
 Kendi gövdeni ölçmek istersen: [`docs/faz0-cekim-talimati.md`](docs/faz0-cekim-talimati.md)
 
-Sahada yapılacak ölçümler: [`docs/saha-talimati.md`](docs/saha-talimati.md)
+**Saha kartı (gece bunu kullan):** [`docs/saha-karti.md`](docs/saha-karti.md)
+Ayrıntılı talimat: [`docs/saha-talimati.md`](docs/saha-talimati.md)
 Dönünce çalıştırılacak analiz: [`docs/analiz-araclari.md`](docs/analiz-araclari.md)
 Kendi ufkunu ölçmek: [`docs/ufuk-olcumu.md`](docs/ufuk-olcumu.md)
 Telefonda çalıştırma: [`docs/telefonda-calistirma.md`](docs/telefonda-calistirma.md)

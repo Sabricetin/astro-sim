@@ -1,5 +1,8 @@
 # Saha talimatı — senin fiziksel olarak yapacağın testler
 
+> **Gece sahada bunu değil, [`saha-karti.md`](saha-karti.md)'yi kullan.**
+> Burası gerekçeleri ve ayrıntıyı içeriyor; kart tek sayfa.
+
 Bu belge **senin işin.** Kodla yapılamayan tek şey burada: gerçek ışığı
 gerçek sensörle ölçmek. Faz 5'in radyometrisi bu ölçüm olmadan kalibre
 edilemez.

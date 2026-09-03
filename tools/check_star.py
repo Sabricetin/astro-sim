@@ -24,9 +24,11 @@ from sensor_ptc import load_plane
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
+    args = [a for a in sys.argv[1:] if a not in ("-h", "--help")]
+    if len(args) == 0 or len(args) != len(sys.argv) - 1:
+        # Sahada gece yarisi yardim istenince patlamamali.
         print(__doc__)
-        return 2
+        return 0 if len(args) != len(sys.argv) - 1 else 2
     white = 15360.0
     black = 2049.0
     full = white - black
@@ -34,7 +36,7 @@ def main() -> int:
     print(f"{'dosya':<22} {'en parlak':>10} {'doluluk':>9} {'FWHM':>7}  durum")
     print("-" * 66)
     worst = 0
-    for arg in sys.argv[1:]:
+    for arg in args:
         p = Path(arg)
         plane, _ = load_plane(p, "G1", roi=0)
         peaks = sp.find_stars(plane, threshold_sigma=10.0, max_stars=5)
