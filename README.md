@@ -151,6 +151,11 @@ Baştan verilip geri dönülmeyen kararlar ve gerekçeleri yol haritasında. Öz
   değer taşımaz. Uydurmanın maliyeti yanlış sonuç değil, yanlış olduğunu
   bilememek
 
+## Lisans kararları
+
+Panorama ve difüz gökyüzü verisi için araştırma ve karar:
+[`docs/lisans-panorama.md`](docs/lisans-panorama.md)
+
 ## Lisans
 
 Henüz lisans dosyası yok; telif hakkı saklıdır. Kod okunabilir ama yeniden kullanım için izin gerekir.

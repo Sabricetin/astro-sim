@@ -64,7 +64,11 @@ astro_sim/
 ## Lisans kararları — ticari plan olduğu için ŞİMDİ ver
 
 > **Açık maddeler (ticari dağıtımdan önce kapanmalı):**
-> BSC5 yıldız kataloğu · photonstophotos gövde ölçümleri
+> BSC5 yıldız kataloğu · photonstophotos gövde ölçümleri ·
+> GAMBONS haritası *(yalnızca kullanılırsa)*
+>
+> **Çözülenler:** ESO panorama — CC BY 4.0, ticari kullanım izinli,
+> atıf "ESO/S. Brunier" (`docs/lisans-panorama.md`)
 
 Ücretsiz bir hobi projesinde bunlar ertelenebilir. Abonelik satacaksan erteleyemezsin: veri formatını ve loader'ı yazdıktan sonra kaynak değiştirmek, o kodu çöpe atmak demek.
 
@@ -445,10 +449,10 @@ ZP/μ_sky/FWHM'i çıkarır.
 
 | Task | İş |
 |---|---|
-| 6.1 | Tüm-gökyüzü panorama: **ESO veya NASA kaynaklı** (lisans bölümüne bak). CC BY-NC panoramalar ticari planla uyumsuz — cezbedici görünseler de alma |
+| 6.1 | Tüm-gökyüzü panorama — ✅ **lisans çözüldü: ESO CC BY 4.0** (`docs/lisans-panorama.md`). Kalan risk shader performansı |
 | 6.2 | Galaktik ↔ ekvatoral koordinat dönüşümü — ✅ **yapıldı (25 Ağustos 2026)** |
 | 6.3 | Küresel eşleme (equirectangular → gökyüzü küresi) |
-| 6.4 | Parlaklık kalibrasyonu: piksel değeri → mag/arcsec² |
+| 6.4 | Parlaklık kalibrasyonu — ⚠️ **panoramadan YAPILAMAZ** (gerilmiş/renk düzeltilmiş görüntü). Hibrit yol: oran modeli Leinert 1998'den, mutlak ölçek 0.B ölçümünden |
 | 6.5 | Fon + Samanyolu + yıldızları birleştir |
 | 6.6 | Hava parıltısı / ufuk gradyanı — ✅ **doğal kısmı yapıldı (3 Eylül 2026)** |
 
