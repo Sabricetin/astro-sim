@@ -47,6 +47,7 @@ Bulut ..............  Işık kirliliği yönü ..........
 | **21:41** | B — Vega 70° |
 | 22:32 | B — 60° |
 | 23:24 | B — 50° |
+| 22:02 | **A3** *(isteğe bağlı)* — Cygnus 85°, 15 s × 5 kare |
 | **00:22** | **A dizisi** (Pegasus tepede 78°) |
 | 00:18 | B — 40° |
 | 01:13 | B — 30° |
@@ -77,6 +78,10 @@ DOYMUS → pozu kısalt (1/2 s, 1/4 s) · %40–70 → **başla** · sönük →
 5 10 15 20 30 60 · 60 30 20 15 10 5
 ```
 **A2** ISO merdiveni, 15 s sabit, 3'er kare: **800 · 1600 · 3200**
+
+**A3** *(isteğe bağlı, 5 dk)* Samanyolu üzerinde ikinci fon:
+**Cygnus / Deneb yakını**, aynı ayar, **15 s × 5 kare**.
+→ `A3-fon-samanyolu/` · Difüz modeli tahminden ölçüme çevirir.
 
 ---
 

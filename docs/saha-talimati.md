@@ -261,6 +261,28 @@ ISO 800  →  ISO 1600  →  ISO 3200
 
 Toplam: 24 + 9 = **33 kare**, poz süresi toplamı ~15 dakika.
 
+### A3 — Samanyolu üzerinde ikinci fon alanı *(isteğe bağlı, ~5 dk)*
+
+**Neden:** Difüz fon üç şeyin toplamı — yıldız ışığı (galaktik enleme
+**bağlı**), zodyak + hava parıltısı (bağlı değil), şehir (yöne bağlı).
+**Tek ölçüm bunları ayıramaz.**
+
+Pegasus b = −31°'de. Samanyolu üzerinde ikinci bir alan ölçersen aradaki
+fark doğrudan **yıldız ışığının katkısını** verir. O olmadan araç,
+galaktik merkez gibi b ≈ 0 hedefler için "fon ölçümün 31° farklı enlemde
+yapıldı, temsil etmeyebilir" diye uyarmak zorunda.
+
+**Nereye:** Cygnus, Deneb yakını — b = 0.2°, 10 Eylül'de **22:02'de
+85°**, neredeyse tam başucu.
+
+**Ne:** A dizisiyle **aynı ayar** (f/3.5, ISO 1600), **15 s × 5 kare.**
+Merdiven gerekmiyor; tek seviye yeterli, çünkü aranan şey Pegasus'la
+**oran.**
+
+Klasör: `data/faz0b/A3-fon-samanyolu/`
+
+Beş dakika, ve difüz gökyüzü modelini tahminden ölçüme çeviriyor.
+
 ## Dizi B — Sönüm (gece boyunca, ~4 saat)
 
 **Hedef: Vega.** Gecenin başında yüksekte, sonunda alçakta. Aynı yıldız,

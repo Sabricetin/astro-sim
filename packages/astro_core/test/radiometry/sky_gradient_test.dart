@@ -175,4 +175,62 @@ void main() {
       expect(artificialGlowMissing.why, contains('olculur'));
     });
   });
+
+  _extrapolationTests();
+}
+
+/// Fon olcumunun yonu — tek olcumle gokyuzu ayrisamaz.
+void _extrapolationTests() {
+  group('Fon olcumu yonu — tahmin uyarisi', () {
+    ExposureReport report({double? measuredAtB, double? targetB}) =>
+        buildExposureReport(
+          targetName: 'test',
+          vMagnitude: 8,
+          altitudeDegrees: 45,
+          declinationDegrees: 0,
+          focalLengthMm: 18,
+          fNumber: 3.5,
+          exposureSeconds: 15,
+          sensor: canon760dIso1600,
+          pixelPitchMicrometers: 3.72,
+          targetGalacticLatitude: targetB,
+          calibration: CalibrationSet(
+            skyMeasuredAtGalacticLatitude: measuredAtB,
+          ),
+        );
+
+    test('ayni enlemde olculmusse uyari yok', () {
+      final r = report(measuredAtB: -31, targetB: -28);
+      expect(r.skyExtrapolationDegrees, closeTo(3, 1e-9));
+      expect(r.skyExtrapolationWarning, isNull);
+    });
+
+    test('Samanyolu seridine tahmin yurutulurse UYARIYOR', () {
+      // Pegasus'ta (b=-31) olculup galaktik merkez icin (b=0)
+      // tahmin yurutmek: 31 derecelik ekstrapolasyon.
+      final r = report(measuredAtB: -31, targetB: 0);
+      expect(r.skyExtrapolationDegrees, closeTo(31, 1e-9));
+      expect(r.skyExtrapolationWarning, isNotNull);
+      expect(r.skyExtrapolationWarning, contains('31'));
+    });
+
+    test('olcum yonu bilinmiyorsa uyari da yok', () {
+      // Sessizce guvenli varsaymak yerine bilgi yoklugu bildiriliyor:
+      // uyari uretilemiyor cunku karsilastirilacak sey yok.
+      final r = report(measuredAtB: null, targetB: 0);
+      expect(r.skyExtrapolationDegrees, isNull);
+      expect(r.skyExtrapolationWarning, isNull);
+    });
+
+    test('esik 20 derece', () {
+      expect(
+        report(measuredAtB: 0, targetB: 19).skyExtrapolationWarning,
+        isNull,
+      );
+      expect(
+        report(measuredAtB: 0, targetB: 21).skyExtrapolationWarning,
+        isNotNull,
+      );
+    });
+  });
 }

@@ -66,6 +66,20 @@ class CalibrationSet {
   /// gradyanla hesaplanir ve sonuc **iyimser** kalir.
   final SkyGlow? artificialGlow;
 
+  /// Fonun OLCULDUGU yonun galaktik enlemi.
+  ///
+  /// Difuz fon uc seyin toplami: yildiz isigi (galaktik enleme BAGLI),
+  /// zodyak + hava parildamasi (bagli degil), sehir (yone bagli).
+  /// **Tek bir olcum bunlari ayiramaz.**
+  ///
+  /// Bu yuzden baska bir galaktik enleme tahmin yurutmek, olculmemis
+  /// bir seyi varsaymak olur. Model uydurmak yerine arac UYARIYOR:
+  /// hedefin enlemi olcumden uzaksa sonuc guvenilmez.
+  ///
+  /// Ikinci bir fon alani (Samanyolu uzerinde) olculurse ayrisma
+  /// mumkun olur — o zaman bu uyari yerini gercek modele birakir.
+  final double? skyMeasuredAtGalacticLatitude;
+
   const CalibrationSet({
     this.extinctionCoefficient,
     this.zeroPoint,
@@ -75,6 +89,7 @@ class CalibrationSet {
     this.skyMagPerSquareArcsec,
     this.psfFwhmPixels,
     this.artificialGlow,
+    this.skyMeasuredAtGalacticLatitude,
   });
 
   /// Sifir noktasini baska bir diyaframa tasir.
@@ -142,6 +157,10 @@ class ExposureReport {
 
   final List<MissingQuantity> missing;
 
+  /// Fon olcumunun hedefe gore ne kadar uzak bir galaktik enlemde
+  /// yapildigi, derece. Null = olcum yonu bilinmiyor.
+  final double? skyExtrapolationDegrees;
+
   const ExposureReport({
     required this.targetName,
     required this.altitudeDegrees,
@@ -157,6 +176,7 @@ class ExposureReport {
     required this.starClipped,
     required this.readNoiseSwampedAt,
     required this.missing,
+    this.skyExtrapolationDegrees,
   });
 
   bool get isComplete => missing.isEmpty;
@@ -199,6 +219,19 @@ class ExposureReport {
   List<String> get pendingStatements => [
     for (final q in missing) '${q.symbol} olculmedi — ${q.comesFrom}',
   ];
+
+  /// Fon olcumunden ne kadar uzaga tahmin yurutuldugu icin uyari.
+  ///
+  /// Esik 20 derece: Samanyolu seridinin kabaca yari genisligi. Bunun
+  /// otesinde yildiz isigi katkisi belirgin sekilde degisir ve tek
+  /// noktada olculmus fon artik temsil etmez.
+  String? get skyExtrapolationWarning {
+    final d = skyExtrapolationDegrees;
+    if (d == null || d < 20) return null;
+    return 'Fon, hedeften ${d.toStringAsFixed(0)}° farkli galaktik '
+        'enlemde olculdu. Yildiz isigi katkisi orada farkli — '
+        'fon degeri temsil etmiyor olabilir.';
+  }
 }
 
 /// Bir poz icin tam rapor uretir.
@@ -220,6 +253,10 @@ ExposureReport buildExposureReport({
   /// Hedefin azimutu. Sehir parlamasi yone bagli oldugu icin gerekli;
   /// verilmezse yalnizca yukseklik gradyani uygulanir.
   double azimuthDegrees = 180,
+
+  /// Hedefin galaktik enlemi. Fon olcumunun yapildigi enlemden cok
+  /// uzaksa rapor uyariyor.
+  double? targetGalacticLatitude,
   CalibrationSet calibration = CalibrationSet.empty,
 }) {
   final scale = arcsecondsPerPixel(
@@ -339,6 +376,12 @@ ExposureReport buildExposureReport({
       sensor: sensor,
     ),
     missing: calibration.missing,
+    skyExtrapolationDegrees:
+        (targetGalacticLatitude != null &&
+            calibration.skyMeasuredAtGalacticLatitude != null)
+        ? (targetGalacticLatitude - calibration.skyMeasuredAtGalacticLatitude!)
+              .abs()
+        : null,
   );
 }
 
