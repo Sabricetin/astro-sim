@@ -24,6 +24,9 @@ class ReportPanel extends StatelessWidget {
   /// Hedefin sapmasi — iz hesabinda kullaniliyor.
   final double declinationDegrees;
 
+  /// Hedefin azimutu. Sehir parlamasi yone bagli (T6.6).
+  final double azimuthDegrees;
+
   /// Hedefin V kadiri. Galaktik merkez gibi difuz hedeflerde yok.
   final double? vMagnitude;
 
@@ -41,6 +44,7 @@ class ReportPanel extends StatelessWidget {
     required this.targetName,
     required this.altitudeDegrees,
     required this.declinationDegrees,
+    this.azimuthDegrees = 180,
     required this.onChanged,
     required this.vMagnitude,
     required this.colorIndexBV,
@@ -161,6 +165,7 @@ class ReportPanel extends StatelessWidget {
       sensor: sensor,
       pixelPitchMicrometers: settings.camera.pixelPitchMicrometers,
       colorIndexBV: colorIndexBV,
+      azimuthDegrees: azimuthDegrees,
       calibration: calibration,
     );
 

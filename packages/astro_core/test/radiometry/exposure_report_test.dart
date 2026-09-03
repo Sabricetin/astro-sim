@@ -327,13 +327,34 @@ void main() {
 
     //   akis(21/arcsec2) = 8.94e5 × 10^-8.4 = 3.56e-3
     //   piksel aci       = 54.8^2           = 3003 arcsec2
-    //   → 10.68 foton/cm2/s/px × 0.177 × 0.45 = 0.851 e-/px/s
-    test('fon 0.851 e-/px/s', () {
+    //   → 10.68 foton/cm2/s/px × 0.177 × 0.45 = 0.851 e-/px/s  BASUCUNDA
+    //
+    // T6.6 eklendikten sonra fon HEDEFIN YONUNDE hesaplaniyor.
+    // 24 derecede:
+    //   van Rhijn V = 2.303   (hava parildamasi katmaninda yol uzuyor)
+    //   sonum       = 0.7166  (k=0.25, X=2.447)
+    //   carpan      = 1.6506
+    //   0.851 × 1.6506 = 1.405 e-/px/s
+    //
+    // Eski deger YANLIS degildi, eski MODELIN degeriydi. Gokyuzu
+    // gercekten alcakta daha parlak; tek sayilik fon SNR'i iyimser
+    // gosteriyordu.
+    test('fon 1.405 e-/px/s (yukseklik gradyani dahil)', () {
       final r = _report(calibration: _testCalibration());
-      expect(
-        r.skyElectronsPerPixelPerSecond.valueOrNull,
-        closeTo(0.851, 0.005),
-      );
+      expect(r.skyElectronsPerPixelPerSecond.valueOrNull, closeTo(1.405, 0.01));
+    });
+
+    test('gradyan gercekten fonu artiriyor', () {
+      // Ayni hedef basucunda olsaydi fon 0.851 olurdu.
+      final low = _report(
+        calibration: _testCalibration(),
+        altitudeDegrees: 24,
+      ).skyElectronsPerPixelPerSecond.valueOrNull!;
+      final high = _report(
+        calibration: _testCalibration(),
+        altitudeDegrees: 89,
+      ).skyElectronsPerPixelPerSecond.valueOrNull!;
+      expect(low / high, closeTo(1.65, 0.05));
     });
 
     //   iz = 15.04 × cos(29) × 15 / 54.8 = 3.60 px
@@ -342,11 +363,15 @@ void main() {
       expect(r.trailPixels, closeTo(3.60, 0.03));
     });
 
-    //   sinyal 363 e-, ayak izi 7.63 px, piksel basina gurultu
-    //   12.8 + 0.75 + 4.15 = 17.7 → SNR = 363/sqrt(498) = 16.3
-    test('SNR 16.3', () {
+    //   sinyal 363 e-, ayak izi 7.63 px
+    //   piksel basina: fon 1.405×15 = 21.1, karanlik 0.75, okuma^2 4.15
+    //   varyans = 363 + 7.63×25.9 = 561  →  SNR = 363/23.7 = 15.3
+    //
+    // Onceki degeri 16.3 idi; fark gradyanin getirdigi ekstra fon.
+    // SNR DUSTU cunku model daha durust oldu.
+    test('SNR 15.3', () {
       final r = _report(calibration: _testCalibration());
-      expect(r.snr.valueOrNull, closeTo(16.3, 0.2));
+      expect(r.snr.valueOrNull, closeTo(15.3, 0.2));
     });
 
     //   (0.851+0.05)×15 = 13.5 e- → /0.1265 = 107 ADU

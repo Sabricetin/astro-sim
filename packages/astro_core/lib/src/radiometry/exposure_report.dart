@@ -28,6 +28,7 @@ import 'missing.dart';
 import 'psf.dart';
 import 'sensor_calibration.dart';
 import 'signal_chain.dart';
+import 'sky_gradient.dart';
 import 'snr.dart';
 import '../camera/exposure.dart';
 import '../camera/field_of_view.dart';
@@ -53,8 +54,17 @@ class CalibrationSet {
 
   final Measured? bandCorrectionPerColorIndex;
   final Measured? darkCurrent;
+
+  /// **Basucundaki** fon parlakligi. Hedefin bakildigi yondeki fon
+  /// bundan turetilir (T6.6): hava parildamasi ufka dogru artar,
+  /// sonum azaltir, net etki 24 derecede 0.47 kadir daha parlak.
   final Measured? skyMagPerSquareArcsec;
+
   final Measured? psfFwhmPixels;
+
+  /// Olculmus sehir parlamasi. Verilmezse fon yalnizca dogal
+  /// gradyanla hesaplanir ve sonuc **iyimser** kalir.
+  final SkyGlow? artificialGlow;
 
   const CalibrationSet({
     this.extinctionCoefficient,
@@ -64,6 +74,7 @@ class CalibrationSet {
     this.darkCurrent,
     this.skyMagPerSquareArcsec,
     this.psfFwhmPixels,
+    this.artificialGlow,
   });
 
   /// Sifir noktasini baska bir diyaframa tasir.
@@ -205,6 +216,10 @@ ExposureReport buildExposureReport({
   required MeasuredSensorProfile sensor,
   required double pixelPitchMicrometers,
   double? colorIndexBV,
+
+  /// Hedefin azimutu. Sehir parlamasi yone bagli oldugu icin gerekli;
+  /// verilmezse yalnizca yukseklik gradyani uygulanir.
+  double azimuthDegrees = 180,
   CalibrationSet calibration = CalibrationSet.empty,
 }) {
   final scale = arcsecondsPerPixel(
@@ -232,11 +247,36 @@ ExposureReport buildExposureReport({
     bandCorrectionPerColorIndex: calibration.bandCorrectionPerColorIndex,
   ).map((adu) => adu * sensor.gain.value);
 
-  final sky = skyAduPerPixelPerSecond(
-    arcsecondsPerPixel: scale,
-    skyMagPerSquareArcsec: calibration.skyMagPerSquareArcsec,
-    zeroPoint: zp,
-  ).map((adu) => adu * sensor.gain.value);
+  // Fon, hedefin bakildigi YONDE hesaplaniyor.
+  //
+  // Basucu degerini dogrudan kullanmak, 24 derecedeki bir hedef icin
+  // fonu yarim kadir eksik gosterirdi ve SNR iyimser cikardi (T6.6).
+  final zenithSky = calibration.skyMagPerSquareArcsec;
+  final Radiometric sky;
+  if (zenithSky == null) {
+    sky = RadiometricGap([
+      skyBackgroundMissing,
+      if (zp == null) zeroPointMissing,
+    ]);
+  } else {
+    final localMag = skyBrightnessAt(
+      zenithMagPerSquareArcsec: zenithSky.value,
+      altitudeDegrees: altitudeDegrees,
+      azimuthDegrees: azimuthDegrees,
+      extinctionCoefficient: calibration.extinctionCoefficient,
+      artificialGlow: calibration.artificialGlow,
+    );
+    final omega = scale * scale;
+    sky = localMag
+        .combine(
+          zp == null
+              ? RadiometricGap.single(zeroPointMissing)
+              : RadiometricValue(zp.value, 'kadir'),
+          (mag, zeroPoint) =>
+              aduPerSecondFromInstrumentalMagnitude(mag - zeroPoint) * omega,
+        )
+        .map((adu) => adu * sensor.gain.value);
+  }
 
   // PSF olculmemisse ayak izi bilinmez; SNR de bilinmez.
   final fwhm = calibration.psfFwhmPixels;

@@ -450,7 +450,34 @@ ZP/μ_sky/FWHM'i çıkarır.
 | 6.3 | Küresel eşleme (equirectangular → gökyüzü küresi) |
 | 6.4 | Parlaklık kalibrasyonu: piksel değeri → mag/arcsec² |
 | 6.5 | Fon + Samanyolu + yıldızları birleştir |
-| 6.6 | Hava parıltısı / ufuk gradyanı (şehir yönünde parlama) |
+| 6.6 | Hava parıltısı / ufuk gradyanı — ✅ **doğal kısmı yapıldı (3 Eylül 2026)** |
+
+### 6.6 doğal gradyan yapıldı (3 Eylül 2026)
+
+Gökyüzü fonu artık tek sayı değil, **bakılan yöne göre** hesaplanıyor.
+
+İki etki birlikte:
+- **Van Rhijn (1921):** hava parıltısı ~90 km'de ince bir katmandan
+  gelir; alçağa bakınca o katmanda daha uzun yol alınır. Alçalınca
+  parlaklık **artar**.
+- **Sönüm:** o ışık daha kalın atmosferden geçer, **azalır**.
+
+Birincisi baskın. 24°'de net etki: başucuna göre **0.47 kadir daha
+parlak** (k = 0.3).
+
+**Bu ihmal edilemezdi.** Projenin ana hedefi tam orada duruyor; tek
+sayılık fon modeli SNR'ı iyimser gösteriyordu. Uçtan uca doğrulama
+değerleri güncellendi: fon 0.851 → **1.405 e⁻/px/s**, SNR 16.3 →
+**15.3**. Eski değerler yanlış değildi, eski *modelin* değerleriydi.
+
+**Yapay ışık (şehir parlaması) modellenmedi.** Yöne, mesafeye, arazi
+engeline ve o gecenin nemine bağlı; iki komşu tepede bile farklı olur.
+`artificialGlowMissing` olarak eksik listesine girdi ve nasıl ölçüleceği
+yazıldı: şehre bakan ve sırtını dönen iki fon karesinin farkı doğrudan
+bu büyüklüğü verir.
+
+Verilmediğinde fon yalnızca doğal gradyanla hesaplanıyor ve sonuç
+**iyimser** kalıyor — sessiz bir hata değil, bilinçli bir alt sınır.
 
 ### 6.2 yapıldı — panorama olmadan da değer var (25 Ağustos 2026)
 

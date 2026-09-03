@@ -36,6 +36,7 @@ export 'src/radiometry/signal_chain.dart';
 export 'src/radiometry/sky_signal.dart';
 export 'src/radiometry/snr.dart';
 export 'src/radiometry/sky_brightness.dart';
+export 'src/radiometry/sky_gradient.dart';
 export 'src/ephemeris/sun.dart';
 export 'src/coords/precession.dart';
 export 'src/coords/refraction.dart';

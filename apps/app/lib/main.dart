@@ -221,15 +221,18 @@ class _SkyScreenState extends State<SkyScreen> {
     });
   }
 
-  /// Hedefin su anki yuksekligi. Rapor hava kutlesini bundan hesapliyor.
-  double get _targetAltitude => equatorialToHorizontal(
+  /// Hedefin su anki yatay konumu. Rapor hava kutlesini ve fon
+  /// gradyanini bundan hesapliyor.
+  Horizontal get _targetHorizontal => equatorialToHorizontal(
     equatorial: _target,
     observer: observer,
     localSiderealTimeDegrees: localMeanSiderealTimeDegrees(
       julianDay(_utc),
       observer.longitudeEastDegrees,
     ),
-  ).altitudeDegrees;
+  );
+
+  double get _targetAltitude => _targetHorizontal.altitudeDegrees;
 
   double _fovAtGestureStart = 0;
   double _rollAtGestureStart = 0;
@@ -619,6 +622,7 @@ class _SkyScreenState extends State<SkyScreen> {
         settings: _settings,
         targetName: _targetName,
         altitudeDegrees: _targetAltitude,
+        azimuthDegrees: _targetHorizontal.azimuthDegrees,
         declinationDegrees: _target.declinationDegrees,
         vMagnitude: _targetMagnitude,
         // Messier katalogunda B-V yok; yildiz kataloguna baglanmasi
